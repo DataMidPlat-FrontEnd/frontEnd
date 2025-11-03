@@ -1,0 +1,70 @@
+/**
+ * 路由配置
+ * 定义应用的所有路由
+ */
+import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
+// 路由配置
+const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login/index.vue'),
+    meta: {
+      title: '登录',
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/Dashboard/index.vue'),
+    meta: {
+      title: '运营首页',
+      requiresAuth: true
+    }
+  }
+  // 后续添加其他路由...
+]
+
+// 创建路由实例
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+
+  // 设置页面标题
+  document.title = to.meta.title ? `${to.meta.title} - 业务数据融合后台` : '业务数据融合后台'
+
+  // 检查是否需要登录
+  if (to.meta.requiresAuth) {
+    if (userStore.isLoggedIn) {
+      next()
+    } else {
+      // 未登录，跳转到登录页
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    }
+  } else {
+    // 如果已登录且访问登录页，跳转到首页
+    if (to.path === '/login' && userStore.isLoggedIn) {
+      next({ path: '/' })
+    } else {
+      next()
+    }
+  }
+})
+
+export default router
+
