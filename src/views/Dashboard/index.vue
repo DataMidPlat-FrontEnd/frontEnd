@@ -313,6 +313,8 @@ const handleLogout = async () => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    // 关键修复：先清理登录状态，再跳转登录页
+    userStore.logout()
     ElMessage.success('已退出登录')
     router.replace('/login')
   } catch {
