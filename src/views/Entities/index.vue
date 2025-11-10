@@ -29,6 +29,12 @@
         <h1 class="title">实体统计</h1>
         <p class="subtitle">ENTITIES ANALYTICS</p>
         <div class="title-divider"></div>
+
+        <!-- 新增：返回运营首页按钮 -->
+        <div class="header-actions">
+          <el-button type="primary" @click="goDashboard">返回运营首页</el-button>
+          <!-- 已移除“返回登录页”按钮 -->
+        </div>
       </div>
 
       <!-- Tabs 切换 -->
@@ -511,11 +517,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import { DocumentRemove, DataAnalysis } from '@element-plus/icons-vue'
 import { getBuildingData, getFloorData, getRoomData, getRoomDataByFloor, getEqData } from '@/api/entities'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // Tabs
 const activeTab = ref('building')
@@ -666,6 +674,16 @@ const goEquipmentDetailById = () => {
   if (!id) return
   router.push(`/entities/equipment/${id}`)
 }
+
+// 新增：返回运营首页
+const goDashboard = () => {
+  router.push('/dashboard')
+}
+
+const goLogin = () => {
+  userStore.logout()
+  router.replace('/login')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -798,6 +816,13 @@ const goEquipmentDetailById = () => {
       background: linear-gradient(90deg, transparent, #00d4ff, transparent);
       border-radius: 2px;
       box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    }
+
+    /* 新增：按钮区域样式（与整体风格一致） */
+    .header-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
     }
   }
 }
