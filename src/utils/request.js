@@ -12,38 +12,62 @@ const service = axios.create({
 })
 
 // 请求拦截器
+// 方法：service.interceptors.request.use
 service.interceptors.request.use(
   config => {
-    // 统一添加 securityCode 到请求头
-    config.headers['securityCode'] = import.meta.env.VITE_SECURITY_CODE
+    const security = import.meta.env.VITE_SECURITY_CODE
+    if (security) {
+      config.headers['securityCode'] = security
+    } else {
+      console.warn('未配置 VITE_SECURITY_CODE，部分接口可能校验失败')
+    }
 
-    // 如果是 POST 请求且没有设置 Content-Type，默认使用 application/json
-    if (config.method === 'post' && !config.headers['Content-Type']) {
+    const method = String(config.method || 'get').toLowerCase()
+    const url = String(config.url || '')
+    const isOperateDock = url.startsWith('/operateDock/')
+    const isLogin = url.endsWith('/operateDock/accountLogin')
+
+    // 默认 POST 没声明时使用 application/json（去掉 charset，避免 415）
+    if (method === 'post' && !config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json'
+    }
+
+    // 登录接口不注入 id；其他运营接口注入 id
+    const parkIdEnv = import.meta.env.VITE_PARK_ID
+    const shouldInjectParkId = isOperateDock && !isLogin
+    if (shouldInjectParkId && parkIdEnv) {
+      const id = parkIdEnv
+      if (method === 'get') {
+        config.params = { id, ...(config.params || {}) }
+      } else {
+        const ct = String(config.headers['Content-Type'] || '').toLowerCase()
+        if (ct.includes('application/x-www-form-urlencoded') && config.data instanceof URLSearchParams) {
+          config.data.set('id', id)
+        } else {
+          config.data = { id, ...(config.data || {}) }
+        }
+      }
     }
 
     return config
   },
   error => {
-    // 请求错误处理
     console.error('请求错误:', error)
     return Promise.reject(error)
   }
 )
 
 // 响应拦截器
+// 方法：service.interceptors.response.use
 service.interceptors.response.use(
   response => {
     const res = response.data
-
-    // 打印响应数据用于调试
     console.log('API响应:', res)
 
-    // 根据接口文档，正常响应的 code 为 "00000"
-    if (res.code === '00000') {
+    // 成功码兼容 "00000" 或数值 0
+    if (res.code === '00000' || res.code === 0) {
       return res
     } else {
-      // 业务错误处理
       console.error('业务错误:', res)
       ElMessage.error(res.msg || '请求失败')
       return Promise.reject(new Error(res.msg || '请求失败'))
