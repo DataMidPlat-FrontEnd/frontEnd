@@ -28,8 +28,25 @@ const routes = [
       title: '运营首页',
       requiresAuth: true
     }
+  },
+  {
+    path: '/entities',
+    name: 'Entities',
+    component: () => import('@/views/Entities/index.vue'),
+    meta: {
+      title: '实体统计',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/entities/equipment/:id',
+    name: 'EquipmentDetail',
+    component: () => import('@/views/Entities/EquipmentDetail.vue'),
+    meta: {
+      title: '仪器详情',
+      requiresAuth: true
+    }
   }
-  // 后续添加其他路由...
 ]
 
 // 创建路由实例
