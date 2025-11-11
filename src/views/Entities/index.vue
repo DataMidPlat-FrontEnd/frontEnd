@@ -166,9 +166,11 @@
                   <p>暂无房间列表数据</p>
                 </div>
                 <div v-else class="table-wrapper">
+                  <!-- 楼层统计 Tab 内的“按楼层获取房间列表”表格 -->
                   <table class="tech-table">
                     <thead>
                       <tr>
+                        <th>房间ID</th>
                         <th>房间名称</th>
                         <th>房间用途</th>
                         <th>房间面积(㎡)</th>
@@ -177,6 +179,7 @@
                     </thead>
                     <tbody>
                       <tr v-for="r in floorRoomsPaged" :key="`${r.name}-${r.area}`">
+                        <td>{{ r.id }}</td>
                         <td>{{ r.name }}</td>
                         <td>{{ r.usage }}</td>
                         <td>{{ r.area }}</td>
@@ -348,9 +351,11 @@
                   <p>暂无房间列表数据</p>
                 </div>
                 <div v-else class="table-wrapper">
+                  <!-- 房间统计 Tab 内的“按楼层获取房间列表”表格 -->
                   <table class="tech-table">
                     <thead>
                       <tr>
+                        <th>房间ID</th>
                         <th>房间名称</th>
                         <th>房间用途</th>
                         <th>房间面积(㎡)</th>
@@ -359,6 +364,7 @@
                     </thead>
                     <tbody>
                       <tr v-for="r in floorRoomsPaged" :key="r.name">
+                        <td>{{ r.id }}</td>
                         <td>{{ r.name }}</td>
                         <td>{{ r.usage }}</td>
                         <td>{{ r.area }}</td>
