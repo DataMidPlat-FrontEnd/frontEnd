@@ -74,26 +74,46 @@
                   </el-button>
                 </div>
 
-                <div v-if="buildingData" class="info-grid">
-                  <div class="info-item">
-                    <span class="label">建筑名称</span>
-                    <span class="value">{{ buildingData.name ?? '-' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">建筑用途</span>
-                    <span class="value">{{ buildingData.usage ?? '-' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">部署平台</span>
-                    <span class="value">{{ buildingData.platform ?? '-' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">建筑面积(㎡)</span>
-                    <span class="value">{{ buildingData.area ?? '-' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">楼层数量</span>
-                    <span class="value">{{ buildingData.floor ?? '-' }}</span>
+                <div v-if="buildingData" class="table-wrapper">
+                  <table class="tech-table">
+                    <thead>
+                      <tr>
+                        <th>指标</th>
+                        <th>数值</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>建筑名称</td><td>{{ buildingData.name ?? '-' }}</td></tr>
+                      <tr><td>建筑用途</td><td>{{ buildingData.usage ?? '-' }}</td></tr>
+                      <tr><td>部署平台</td><td>{{ buildingData.platform ?? '-' }}</td></tr>
+                      <tr><td>建筑面积(㎡)</td><td>{{ buildingData.area ?? '-' }}</td></tr>
+                      <tr><td>楼层数量</td><td>{{ buildingData.floor ?? '-' }}</td></tr>
+                      <tr><td>仪器数量</td><td>{{ buildingData.ins ?? '-' }}</td></tr>
+                      <tr><td>仪器使用次数</td><td>{{ buildingData.insUse ?? '-' }}</td></tr>
+                      <tr><td>总用户数</td><td>{{ buildingData.tUser ?? '-' }}</td></tr>
+                      <tr><td>内部用户数</td><td>{{ buildingData.iUser ?? '-' }}</td></tr>
+                      <tr><td>外部用户数</td><td>{{ buildingData.oUser ?? '-' }}</td></tr>
+                      <tr><td>资产总价值(万元)</td><td>{{ buildingData.totalAssetValue ?? '-' }}</td></tr>
+                      <tr><td>总收入(元)</td><td>{{ buildingData.tIncome ?? '-' }}</td></tr>
+                      <tr><td>内部收入(元)</td><td>{{ buildingData.iIncome ?? '-' }}</td></tr>
+                      <tr><td>外部收入(元)</td><td>{{ buildingData.oIncome ?? '-' }}</td></tr>
+                      <tr><td>总机时数(小时)</td><td>{{ buildingData.tTime ?? '-' }}</td></tr>
+                      <tr><td>内部机时数(小时)</td><td>{{ buildingData.iTime ?? '-' }}</td></tr>
+                      <tr><td>外部机时数(小时)</td><td>{{ buildingData.oTime ?? '-' }}</td></tr>
+                      <tr><td>总课题组数</td><td>{{ buildingData.tGroup ?? '-' }}</td></tr>
+                      <tr><td>内部课题组数</td><td>{{ buildingData.iGroup ?? '-' }}</td></tr>
+                      <tr><td>外部课题组数</td><td>{{ buildingData.oGroup ?? '-' }}</td></tr>
+                      <tr><td>总经费卡数</td><td>{{ buildingData.tCard ?? '-' }}</td></tr>
+                      <tr><td>内部经费卡数</td><td>{{ buildingData.iCard ?? '-' }}</td></tr>
+                      <tr><td>外部经费卡数</td><td>{{ buildingData.oCard ?? '-' }}</td></tr>
+                      <tr><td>培训场数</td><td>{{ buildingData.train ?? '-' }}</td></tr>
+                      <tr><td>培训人数</td><td>{{ buildingData.trainUser ?? '-' }}</td></tr>
+                      <tr><td>培训资料数</td><td>{{ buildingData.trainInfo ?? '-' }}</td></tr>
+                      <tr><td>培训通过率(%)</td><td>{{ buildingData.trainPass ?? '-' }}</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="actions">
+                    <el-button type="primary" plain>导出报表</el-button>
                   </div>
                 </div>
 
@@ -118,27 +138,26 @@
                   <el-button type="primary" @click="loadFloorData">查询</el-button>
                 </div>
 
-                <div class="info-grid">
-                  <div class="info-item">
-                    <span class="label">名称</span>
-                    <span class="value">{{ floorInfoSafe.name || '—' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">用途</span>
-                    <span class="value">{{ floorInfoSafe.usage || '—' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">面积(㎡)</span>
-                    <span class="value">{{ floorInfoSafe.area || '—' }}</span>
-                  </div>
-                  <div class="info-item info-platforms">
-                    <span class="label">包含平台</span>
-                    <span class="value">
-                      <span v-if="floorInfoSafe.platform && floorInfoSafe.platform.length">
-                        <span v-for="p in floorInfoSafe.platform" :key="p.id" class="tag">{{ p.name }}</span>
-                      </span>
-                      <span v-else>—</span>
-                    </span>
+                <div class="table-wrapper">
+                  <table class="tech-table">
+                    <thead><tr><th>指标</th><th>数值</th></tr></thead>
+                    <tbody>
+                      <tr><td>名称</td><td>{{ floorInfoSafe.name || '—' }}</td></tr>
+                      <tr><td>用途</td><td>{{ floorInfoSafe.usage || '—' }}</td></tr>
+                      <tr><td>面积(㎡)</td><td>{{ floorInfoSafe.area || '—' }}</td></tr>
+                      <tr>
+                        <td>包含平台</td>
+                        <td>
+                          <span v-if="floorInfoSafe.platform && floorInfoSafe.platform.length">
+                            <span v-for="p in floorInfoSafe.platform" :key="p.id" class="tag">{{ p.name }}</span>
+                          </span>
+                          <span v-else>—</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="actions">
+                    <el-button type="primary" plain>导出报表</el-button>
                   </div>
                 </div>
               </div>
@@ -221,27 +240,26 @@
                   <el-button type="primary" @click="loadRoomDetail">查询</el-button>
                 </div>
 
-                <div v-if="roomDetailSafe.name" class="info-grid">
-                  <div class="info-item">
-                    <span class="label">房间名称</span>
-                    <span class="value">{{ roomDetailSafe.name }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">房间用途</span>
-                    <span class="value">{{ roomDetailSafe.usage || '—' }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">房间面积(㎡)</span>
-                    <span class="value">{{ roomDetailSafe.area || '—' }}</span>
-                  </div>
-                  <div class="info-item info-platforms">
-                    <span class="label">所属平台</span>
-                    <span class="value">
-                      <span v-if="roomDetailSafe.platform && roomDetailSafe.platform.length">
-                        <span v-for="p in roomDetailSafe.platform" :key="p.id" class="tag">{{ p.name }}</span>
-                      </span>
-                      <span v-else>—</span>
-                    </span>
+                <div v-if="roomDetailSafe.name" class="table-wrapper">
+                  <table class="tech-table">
+                    <thead><tr><th>指标</th><th>数值</th></tr></thead>
+                    <tbody>
+                      <tr><td>房间名称</td><td>{{ roomDetailSafe.name }}</td></tr>
+                      <tr><td>房间用途</td><td>{{ roomDetailSafe.usage || '—' }}</td></tr>
+                      <tr><td>房间面积(㎡)</td><td>{{ roomDetailSafe.area || '—' }}</td></tr>
+                      <tr>
+                        <td>所属平台</td>
+                        <td>
+                          <span v-if="roomDetailSafe.platform && roomDetailSafe.platform.length">
+                            <span v-for="p in roomDetailSafe.platform" :key="p.id" class="tag">{{ p.name }}</span>
+                          </span>
+                          <span v-else>—</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="actions">
+                    <el-button type="primary" plain>导出报表</el-button>
                   </div>
                 </div>
 
@@ -428,32 +446,39 @@
                   <el-button @click="goEquipmentDetailById">查看详情</el-button>
                 </div>
 
-                <!-- 基本信息与业务指标（来自 eqData.data） -->
-                <div v-if="eqDetail" class="info-grid">
-                  <div class="info-item"><span class="label">仪器名称</span><span class="value">{{ eqDetail.name || '-' }}</span></div>
-                  <div class="info-item"><span class="label">资产编号</span><span class="value">{{ eqDetail.code || '-' }}</span></div>
-                  <div class="info-item"><span class="label">品牌</span><span class="value">{{ eqDetail.manufacturer || '-' }}</span></div>
-                  <div class="info-item"><span class="label">型号</span><span class="value">{{ eqDetail.instrVersion || '-' }}</span></div>
-                  <div class="info-item"><span class="label">参数</span><span class="value">{{ eqDetail.technical || '-' }}</span></div>
-                  <div class="info-item"><span class="label">所属平台</span><span class="value">{{ eqDetail.platform || '-' }}</span></div>
-                  <div class="info-item"><span class="label">所属房间</span><span class="value">{{ eqDetail.room || '-' }}</span></div>
-                  <div class="info-item"><span class="label">当前状态</span><span class="value">{{ eqDetail.status || '-' }}</span></div>
-                  <div class="info-item"><span class="label">使用率(%)</span><span class="value">{{ eqDetail.usage ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">总机时(小时)</span><span class="value">{{ eqDetail.tTime ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">内部机时(小时)</span><span class="value">{{ eqDetail.iTime ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">外部机时(小时)</span><span class="value">{{ eqDetail.oTime ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">总预约人数</span><span class="value">{{ eqDetail.tUser ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">内部预约人数</span><span class="value">{{ eqDetail.iUser ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">外部预约人数</span><span class="value">{{ eqDetail.oUser ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">总服务项目数</span><span class="value">{{ eqDetail.tCard ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">内部服务项目数</span><span class="value">{{ eqDetail.iCard ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">外部服务项目数</span><span class="value">{{ eqDetail.oCard ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">使用样品数</span><span class="value">{{ eqDetail.sample ?? '-' }}</span></div>
-                  <div class="info-item"><span class="label">使用耗材数</span><span class="value">{{ eqDetail.materials ?? '-' }}</span></div>
-                  <div class="info-item full-width"><span class="label">功能特色</span><span class="value">{{ eqDetail.function || '-' }}</span></div>
-                  <div class="info-item full-width"><span class="label">支撑成果</span><span class="value">{{ eqDetail.result || '-' }}</span></div>
-                  <div class="info-item full-width"><span class="label">简介</span><span class="value">{{ eqDetail.remark || '-' }}</span></div>
-                  <div class="info-item full-width"><span class="label">管理员联系方式</span><span class="value">{{ eqDetail.mgr || '-' }}</span></div>
+                <div v-if="eqDetail" class="table-wrapper">
+                  <table class="tech-table">
+                    <thead><tr><th>指标</th><th>数值</th></tr></thead>
+                    <tbody>
+                      <tr><td>仪器名称</td><td>{{ eqDetail.name || '-' }}</td></tr>
+                      <tr><td>资产编号</td><td>{{ eqDetail.code || '-' }}</td></tr>
+                      <tr><td>品牌</td><td>{{ eqDetail.manufacturer || '-' }}</td></tr>
+                      <tr><td>型号</td><td>{{ eqDetail.instrVersion || '-' }}</td></tr>
+                      <tr><td>参数</td><td>{{ eqDetail.technical || '-' }}</td></tr>
+                      <tr><td>所属平台</td><td>{{ eqDetail.platform || '-' }}</td></tr>
+                      <tr><td>所属房间</td><td>{{ eqDetail.room || '-' }}</td></tr>
+                      <tr><td>当前状态</td><td>{{ eqDetail.status || '-' }}</td></tr>
+                      <tr><td>使用率(%)</td><td>{{ eqDetail.usage ?? '-' }}</td></tr>
+                      <tr><td>总机时(小时)</td><td>{{ eqDetail.tTime ?? '-' }}</td></tr>
+                      <tr><td>内部机时(小时)</td><td>{{ eqDetail.iTime ?? '-' }}</td></tr>
+                      <tr><td>外部机时(小时)</td><td>{{ eqDetail.oTime ?? '-' }}</td></tr>
+                      <tr><td>总预约人数</td><td>{{ eqDetail.tUser ?? '-' }}</td></tr>
+                      <tr><td>内部预约人数</td><td>{{ eqDetail.iUser ?? '-' }}</td></tr>
+                      <tr><td>外部预约人数</td><td>{{ eqDetail.oUser ?? '-' }}</td></tr>
+                      <tr><td>总服务项目数</td><td>{{ eqDetail.tCard ?? '-' }}</td></tr>
+                      <tr><td>内部服务项目数</td><td>{{ eqDetail.iCard ?? '-' }}</td></tr>
+                      <tr><td>外部服务项目数</td><td>{{ eqDetail.oCard ?? '-' }}</td></tr>
+                      <tr><td>使用样品数</td><td>{{ eqDetail.sample ?? '-' }}</td></tr>
+                      <tr><td>使用耗材数</td><td>{{ eqDetail.materials ?? '-' }}</td></tr>
+                      <tr><td>功能特色</td><td>{{ eqDetail.function || '-' }}</td></tr>
+                      <tr><td>支撑成果</td><td>{{ eqDetail.result || '-' }}</td></tr>
+                      <tr><td>简介</td><td>{{ eqDetail.remark || '-' }}</td></tr>
+                      <tr><td>管理员联系方式</td><td>{{ eqDetail.mgr || '-' }}</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="actions">
+                    <el-button type="primary" plain>导出报表</el-button>
+                  </div>
                 </div>
 
                 <!-- 传感器数据 -->
@@ -521,18 +546,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { DocumentRemove, DataAnalysis } from '@element-plus/icons-vue'
 import { getBuildingData, getFloorData, getRoomData, getRoomDataByFloor, getEqData } from '@/api/entities'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 // Tabs
 const activeTab = ref('building')
+if (route.query.tab) activeTab.value = String(route.query.tab)
+watch(() => route.query.tab, (t) => { if (t) activeTab.value = String(t) })
+watch(activeTab, (t) => { router.replace({ path: '/entities', query: { tab: t } }) })
 
 // 背景粒子
 const getParticleStyle = (index) => {
@@ -693,58 +722,20 @@ const goLogin = () => {
 </script>
 
 <style lang="scss" scoped>
-/* 复用 Entities 科技风格样式（同主页面） */
+@import '@/styles/variables.scss';
 .entities-container {
   position: relative;
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background: #0a0e27;
+  background: $bg-page;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 40px 20px;
 }
 
-.bg-animation {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  .bg-gradient {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 25%, #2a1f3f 50%, #1a1f3a 75%, #0a0e27 100%);
-    animation: gradientShift 15s ease infinite;
-  }
-  .grid-lines {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0.08;
-    .grid-line {
-      position: absolute;
-      background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-      &.horizontal { width: 100%; height: 1px; }
-      &.vertical { width: 1px; height: 100%; }
-    }
-  }
-  .particles {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    .particle {
-      position: absolute;
-      background: #00d4ff;
-      border-radius: 50%;
-      opacity: 0.4;
-      animation: particleFloat linear infinite;
-      box-shadow: 0 0 8px #00d4ff;
-    }
-  }
-}
+.bg-animation { display: none; }
 
 @keyframes gradientShift {
   0% { filter: hue-rotate(0deg); }
@@ -759,78 +750,19 @@ const goLogin = () => {
 .entities-box {
   position: relative;
   z-index: 1;
-  width: 1100px;
-  max-width: 95%;
+  width: 100%;
+  max-width: 100%;
   margin-top: 10px;
   border-radius: 16px;
-  background: rgba(15, 20, 40, 0.75);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(18px);
+  background: $bg-color;
+  border: 1px solid $border-light;
+  box-shadow: $box-shadow-light;
   overflow: hidden;
   padding-bottom: 24px;
 
-  .corner-decoration {
-    position: absolute;
-    width: 18px; height: 18px;
-    border: 2px solid #00d4ff; border-radius: 4px;
-    box-shadow: 0 0 16px rgba(0, 212, 255, 0.5);
-    &.tl { top: 10px; left: 10px; }
-    &.tr { top: 10px; right: 10px; }
-    &.bl { bottom: 10px; left: 10px; }
-    &.br { bottom: 10px; right: 10px; }
-  }
+  .corner-decoration { display: none; }
 
-  .box-header {
-    padding: 28px 36px 12px;
-    text-align: center;
-
-    .logo-wrapper {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 8px;
-
-      .logo-icon {
-        color: #00d4ff;
-        filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.7));
-      }
-      .logo-glow {
-        position: absolute;
-        width: 90px; height: 90px;
-        background: radial-gradient(circle, rgba(0, 212, 255, 0.25), transparent 70%);
-        border-radius: 50%;
-        animation: pulse 3s ease-in-out infinite;
-      }
-    }
-
-    .title {
-      font-size: 28px; font-weight: 700; color: #ffffff;
-      margin: 6px 0; letter-spacing: 2px;
-      text-shadow: 0 0 18px rgba(0, 212, 255, 0.5);
-      animation: titleGlow 3s ease-in-out infinite;
-    }
-
-    .subtitle {
-      font-size: 12px; font-weight: 300; color: #00d4ff;
-      letter-spacing: 3px; opacity: 0.8; margin-bottom: 14px;
-    }
-
-    .title-divider {
-      width: 60px; height: 3px; margin: 0 auto;
-      background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-    }
-
-    /* 新增：按钮区域样式（与整体风格一致） */
-    .header-actions {
-      margin-top: 12px;
-      display: flex;
-      justify-content: center;
-    }
-  }
+  .box-header { display: none; }
 }
 
 .tab-wrapper {
@@ -839,75 +771,43 @@ const goLogin = () => {
 
 .section-card {
   margin-top: 16px;
-  background: rgba(15, 20, 40, 0.85);
+  background: $bg-color;
   border-radius: 12px;
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid $border-light;
+  box-shadow: $box-shadow-light;
   overflow: hidden;
   transition: all 0.3s ease;
 
-  &:hover {
-    border-color: rgba(0, 212, 255, 0.4);
-    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.22);
-    transform: translateY(-2px);
-  }
+  &:hover { transform: translateY(-1px); }
 
   .section-header {
     display: flex; align-items: center; gap: 12px; padding: 16px 22px;
-    background: rgba(0, 212, 255, 0.05); border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-    h3 { font-size: 16px; font-weight: 600; color: #ffffff; margin: 0; letter-spacing: 1px; }
-    .header-line { flex: 1; height: 2px; background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), transparent); margin-left: auto; }
+    background: $bg-color; border-bottom: 1px solid $border-light;
+    h3 { font-size: 16px; font-weight: 600; color: $text-primary; margin: 0; letter-spacing: 0.5px; }
+    .header-line { display: none; }
   }
 
   .card-body {
     padding: 22px;
 
-    .filter-bar {
-      display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;
-      :deep(.el-input__wrapper),
-      :deep(.el-select__wrapper),
-      :deep(.el-date-editor) {
-        background-color: rgba(255,255,255,0.06);
-        border-color: rgba(0, 212, 255, 0.4);
-        color: #ffffff;
-      }
-      :deep(.el-input__inner),
-      :deep(.el-select__selected-item),
-      :deep(.el-range-input) {
-        color: #ffffff;
-      }
-      :deep(.el-input__inner::placeholder),
-      :deep(.el-range-input::placeholder) {
-        color: #b8dfff;
-        opacity: 0.9;
-      }
-    }
+    .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
 
     .info-grid {
       display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
       .info-item {
         display: flex; flex-direction: column; gap: 8px; padding: 12px;
-        background: rgba(0, 212, 255, 0.03); border: 1px solid rgba(0, 212, 255, 0.15); border-radius: 8px;
-        .label { font-size: 12px; color: rgba(0, 212, 255, 0.7); letter-spacing: 0.5px; }
-        .value { font-size: 16px; font-weight: 600; color: #ffffff; }
+        background: $bg-color; border: 1px solid $border-light; border-radius: 8px;
+        .label { font-size: 12px; color: $text-secondary; letter-spacing: 0.5px; }
+        .value { font-size: 16px; font-weight: 600; color: $text-primary; }
         &.full-width { grid-column: 1 / -1; }
       }
     }
 
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; color: #cfe8ff;
-      .empty-icon { font-size: 42px; color: #00d4ff; }
-    }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: $text-regular; .empty-icon { font-size: 42px; color: $primary-color; } }
 
     .table-wrapper { overflow-x: auto; }
-    .tech-table {
-      width: 100%;
-      border-collapse: collapse;
-      color: #cfe8ff;
-      th, td { border-bottom: 1px solid rgba(0, 212, 255, 0.2); padding: 12px; text-align: left; }
-      th { color: #00d4ff; font-weight: 600; }
-    }
+    .tech-table { width: 100%; border-collapse: collapse; color: $text-primary; th, td { border-bottom: 1px solid $border-light; padding: 12px; text-align: left; } th { color: $text-regular; font-weight: 600; } }
+    .actions { display: flex; justify-content: flex-end; margin-top: 12px; }
   }
 }
 
@@ -917,21 +817,18 @@ const goLogin = () => {
 
 .tag {
   display: inline-block;
-  background: rgba(0, 212, 255, 0.18);
-  color: #00d4ff;
-  border: 1px solid rgba(0, 212, 255, 0.35);
+  background: rgba(64, 158, 255, 0.12);
+  color: $primary-color;
+  border: 1px solid rgba(64, 158, 255, 0.25);
   border-radius: 6px;
   padding: 4px 8px;
   margin-right: 6px;
   font-size: 12px;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.1); opacity: 1; }
-}
-@keyframes titleGlow {
-  0%, 100% { text-shadow: 0 0 18px rgba(0, 212, 255, 0.5); }
-  50% { text-shadow: 0 0 24px rgba(0, 212, 255, 0.8); }
-}
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes titleGlow { 0%, 100% { text-shadow: none; } 50% { text-shadow: none; } }
+
+/* 隐藏深色背景动画元素 */
+.bg-animation, .bg-gradient, .grid-lines, .particles { display: none; }
 </style>

@@ -2,6 +2,8 @@
  * 全局样式
  */
 
+@import './variables.scss';
+
 // 重置样式
 * {
   margin: 0;
@@ -18,6 +20,8 @@ body,
     'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: $bg-page;
+  color: $text-primary;
 }
 
 // 滚动条样式

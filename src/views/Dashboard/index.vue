@@ -13,34 +13,7 @@
 
     <div class="main-content">
       <!-- 顶部导航栏 -->
-      <div class="header">
-        <div class="header-left">
-          <div class="logo-icon">
-            <el-icon :size="32"><DataAnalysis /></el-icon>
-          </div>
-          <div class="title-wrapper">
-            <h1 class="title">运营首页</h1>
-            <p class="subtitle">OPERATION DASHBOARD</p>
-          </div>
-        </div>
-        <div class="header-right">
-          <div class="user-info">
-            <el-icon class="user-icon"><User /></el-icon>
-            <div class="user-details">
-              <span class="user-name">{{ userStore.userName }}</span>
-              <span class="user-role">{{ userStore.userRole }}</span>
-            </div>
-          </div>
-          <button class="entities-button" @click="handleGoEntities">
-            <el-icon><Collection /></el-icon>
-            <span>实体统计</span>
-          </button>
-          <button class="logout-button" @click="handleLogout">
-            <el-icon><SwitchButton /></el-icon>
-            <span>退出登录</span>
-          </button>
-        </div>
-      </div>
+        <div class="header"></div>
 
       <!-- 内容区域 -->
       <div class="content">
@@ -151,16 +124,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getParkData } from '@/api/dashboard'
-import {
-  DataAnalysis,
-  User,
-  SwitchButton,
-  UserFilled,
-  Lock,
-  Calendar,
-  DocumentRemove,
-  Collection
-} from '@element-plus/icons-vue'
+import { DataAnalysis, User, SwitchButton, UserFilled, Lock, Calendar, DocumentRemove } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -244,14 +208,14 @@ const updateChartsWithData = (d) => {
     title: {
       text: '培训通过率',
       left: 'center',
-      top: 10,
-      textStyle: { color: '#00d4ff', fontSize: 16, fontWeight: 'bold' }
+      top: 12,
+      textStyle: { color: '#303133', fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: { trigger: 'item', formatter: '{b}: {c}% ({d}%)' },
     legend: {
       orient: 'horizontal',
       bottom: 0,
-      textStyle: { color: '#cfe8ff' }
+      textStyle: { color: '#606266' }
     },
     series: [
       {
@@ -260,11 +224,11 @@ const updateChartsWithData = (d) => {
         radius: ['40%', '70%'],
         center: ['50%', '50%'],
         avoidLabelOverlap: true,
-        label: { show: true, formatter: '{b}\n{c}%', color: '#ffffff' },
-        labelLine: { show: true },
+        label: { show: true, formatter: '{b}\n{c}%', color: '#303133' },
+        labelLine: { show: true, lineStyle: { color: '#909399' } },
         itemStyle: {
           shadowBlur: 10,
-          shadowColor: 'rgba(0, 212, 255, 0.4)'
+          shadowColor: 'rgba(0, 0, 0, 0.1)'
         },
         color: ['#00ff88', '#ff6b6b'],
         data: [
@@ -300,10 +264,7 @@ const loadDashboard = async () => {
   }
 }
 
-// 跳转到实体统计
-const handleGoEntities = () => {
-  router.push('/entities')
-}
+// 顶部已提供导航，移除页面内按钮
 
 // 退出登录
 const handleLogout = async () => {
@@ -334,6 +295,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
 @keyframes logoGlow {
   0% { filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.6)); }
   50% { filter: drop-shadow(0 0 14px rgba(0, 212, 255, 0.9)); }
@@ -345,7 +307,7 @@ onUnmounted(() => {
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #0a0e27;
+  background: $bg-page;
 }
 
 .bg-animation {
@@ -418,18 +380,7 @@ onUnmounted(() => {
   padding: 20px;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 30px;
-  margin-bottom: 30px;
-  background: rgba(15, 20, 40, 0.8);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
+.header { display: none; }
 
 .header-left {
   display: flex;
@@ -438,26 +389,22 @@ onUnmounted(() => {
 }
 
 .logo-icon {
-  color: #00d4ff;
-  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.6));
-  animation: logoGlow 3s ease-in-out infinite;
+  color: $primary-color;
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  color: $text-primary;
   margin: 0;
-  letter-spacing: 2px;
-  text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+  letter-spacing: 1px;
 }
 
 .subtitle {
   font-size: 12px;
-  color: #00d4ff;
+  color: $text-secondary;
   margin-top: 4px;
-  letter-spacing: 2px;
-  opacity: 0.8;
+  letter-spacing: 1px;
 }
 
 .header-right {
@@ -470,15 +417,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 20px;
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  padding: 8px 16px;
+  background: $bg-color;
+  border: 1px solid $border-light;
   border-radius: 8px;
 }
 
 .user-icon {
   font-size: 24px;
-  color: #00d4ff;
+  color: $primary-color;
 }
 
 .user-details {
@@ -490,34 +437,16 @@ onUnmounted(() => {
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: $text-primary;
 }
 
 .user-role {
   font-size: 12px;
-  color: rgba(0, 212, 255, 0.8);
+  color: $text-secondary;
 }
 
-.entities-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.8), rgba(0, 160, 220, 0.8));
-  border: 1px solid rgba(0, 212, 255, 0.5);
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
-}
 
-.entities-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.5);
-  background: linear-gradient(135deg, rgba(0, 212, 255, 1), rgba(0, 160, 220, 1));
-}
+.entities-button:hover { opacity: 0.9; }
 
 .entities-button:active {
   transform: translateY(0);
@@ -527,22 +456,18 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, rgba(244, 67, 54, 0.8), rgba(211, 47, 47, 0.8));
-  border: 1px solid rgba(244, 67, 54, 0.5);
+  padding: 8px 16px;
+  background: #f56c6c;
+  border: 1px solid transparent;
   border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: $box-shadow-base;
 }
 
-.logout-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.5);
-  background: linear-gradient(135deg, rgba(244, 67, 54, 1), rgba(211, 47, 47, 1));
-}
+.logout-button:hover { opacity: 0.9; }
 
 .logout-button:active {
   transform: translateY(0);
@@ -565,30 +490,17 @@ onUnmounted(() => {
 .kpi-card {
   padding: 16px;
   border-radius: 12px;
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0, 212, 255, 0.12);
+  background: $bg-color;
+  border: 1px solid $border-light;
+  transition: all 0.2s ease;
+  box-shadow: $box-shadow-light;
 }
 
-.kpi-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 212, 255, 0.35);
-  box-shadow: 0 6px 22px rgba(0, 212, 255, 0.25);
-  background: rgba(0, 212, 255, 0.08);
-}
+.kpi-card:hover { transform: translateY(-1px); }
 
-.kpi-title {
-  color: rgba(0, 212, 255, 0.7);
-  font-size: 12px;
-  margin-bottom: 8px;
-}
+.kpi-title { color: $text-secondary; font-size: 12px; margin-bottom: 8px; }
 
-.kpi-value {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
-}
+.kpi-value { color: $text-primary; font-size: 18px; font-weight: 600; }
 
 .chart-row {
   display: grid;
@@ -599,10 +511,10 @@ onUnmounted(() => {
 .chart-box {
   height: 360px;
   border-radius: 12px;
-  background: rgba(15, 20, 40, 0.85);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  transition: all 0.3s ease;
-  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.12), 0 6px 18px rgba(0, 0, 0, 0.3);
+  background: $bg-color;
+  border: 1px solid $border-light;
+  transition: all 0.2s ease;
+  box-shadow: $box-shadow-light;
 }
 
 .chart-box:hover {
@@ -611,59 +523,48 @@ onUnmounted(() => {
 }
 
 .tech-card {
-  background: rgba(15, 20, 40, 0.85);
+  background: $bg-color;
   border-radius: 12px;
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid $border-light;
+  box-shadow: $box-shadow-light;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.tech-card:hover {
-  border-color: rgba(0, 212, 255, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 212, 255, 0.22);
-  transform: translateY(-2px);
-}
+.tech-card:hover { transform: translateY(-1px); }
 
 .card-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 30px;
-  background: rgba(0, 212, 255, 0.05);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  padding: 16px 24px;
+  background: $bg-color;
+  border-bottom: 1px solid $border-light;
 }
 
 .card-header .header-icon {
   font-size: 24px;
-  color: #00d4ff;
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.6));
+  color: $primary-color;
 }
 
 .card-header h3 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: $text-primary;
   margin: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .count-badge {
   padding: 4px 12px;
-  background: linear-gradient(135deg, #00d4ff, #00a8cc);
+  background: $primary-color;
   border-radius: 12px;
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
 }
 
-.header-line {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), transparent);
-  margin-left: auto;
-}
+.header-line { display: none; }
 
 .card-body {
   padding: 30px;
@@ -680,8 +581,8 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  background: rgba(0, 212, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.15);
+  background: $bg-color;
+  border: 1px solid $border-light;
   border-radius: 8px;
 }
 
@@ -689,17 +590,9 @@ onUnmounted(() => {
   grid-column: 1 / -1;
 }
 
-.label {
-  font-size: 12px;
-  color: rgba(0, 212, 255, 0.7);
-  letter-spacing: 0.5px;
-}
+.label { font-size: 12px; color: $text-secondary; letter-spacing: 0.5px; }
 
-.value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
+.value { font-size: 16px; font-weight: 600; color: $text-primary; }
 
 .permission {
   display: flex;
@@ -708,9 +601,7 @@ onUnmounted(() => {
   color: #f4a460;
 }
 
-.permission.full {
-  color: #00ff88;
-}
+.permission.full { color: #67c23a; }
 
 .empty-state {
   display: flex;
@@ -718,42 +609,36 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #cfe8ff;
+  color: $text-regular;
 }
 
-.empty-icon {
-  font-size: 48px;
-  color: #00d4ff;
-}
+.empty-icon { font-size: 48px; color: $primary-color; }
 
 .table-wrapper {
   overflow-x: auto;
 }
 
-.tech-table {
-  width: 100%;
-  border-collapse: collapse;
-  color: #cfe8ff;
-}
+.tech-table { width: 100%; border-collapse: collapse; color: $text-primary; }
 
 .tech-table th,
 .tech-table td {
-  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  border-bottom: 1px solid $border-light;
   padding: 12px;
   text-align: left;
 }
 
-.tech-table th {
-  color: #00d4ff;
-  font-weight: 600;
-}
+.tech-table th { color: $text-regular; font-weight: 600; }
 
 .location-cell {
   max-width: 320px;
   word-break: break-all;
 }
 
-/* 加强背景元素可视化 */
-.bg-animation .grid-lines { opacity: 0.12; }
-.bg-animation .particle { opacity: 0.5; box-shadow: 0 0 10px #00d4ff; }
+/* 隐藏深色背景动画元素 */
+.bg-animation,
+.bg-gradient,
+.grid-lines,
+.particles { display: none; }
+.bg-animation .grid-lines { display: none; }
+.bg-animation .particle { display: none; }
 </style>

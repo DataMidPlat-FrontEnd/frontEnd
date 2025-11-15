@@ -18,16 +18,16 @@ service.interceptors.request.use(
     const security = import.meta.env.VITE_SECURITY_CODE
     if (security) {
       config.headers['securityCode'] = security
+      config.headers['securitycode'] = security
     } else {
       console.warn('未配置 VITE_SECURITY_CODE，部分接口可能校验失败')
     }
 
     const method = String(config.method || 'get').toLowerCase()
     const url = String(config.url || '')
-    const isOperateDock = url.startsWith('/operateDock/')
-    const isLogin = url.endsWith('/operateDock/accountLogin')
+    const isOperateDock = url.includes('/operateDock/')
+    const isLogin = url.includes('/operateDock/accountLogin')
 
-    // 默认 POST 没声明时使用 application/json（去掉 charset，避免 415）
     if (method === 'post' && !config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json'
     }
@@ -64,13 +64,20 @@ service.interceptors.response.use(
     const res = response.data
     console.log('API响应:', res)
 
-    // 成功码兼容 "00000" 或数值 0
-    if (res.code === '00000' || res.code === 0) {
+    const success =
+      res.code === '00000' ||
+      res.code === 0 ||
+      res.code === '0' ||
+      res.code === 200 ||
+      res.code === '200' ||
+      res.success === true
+    if (success) {
       return res
     } else {
       console.error('业务错误:', res)
-      ElMessage.error(res.msg || '请求失败')
-      return Promise.reject(new Error(res.msg || '请求失败'))
+      const msg = res.msg || res.message || res.errorMsg || '请求失败'
+      ElMessage.error(msg)
+      return Promise.reject(new Error(msg))
     }
   },
   error => {

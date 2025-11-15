@@ -18,34 +18,53 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/dashboard'
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard/index.vue'),
-    meta: {
-      title: '运营首页',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/entities',
-    name: 'Entities',
-    component: () => import('@/views/Entities/index.vue'),
-    meta: {
-      title: '实体统计',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/entities/equipment/:id',
-    name: 'EquipmentDetail',
-    component: () => import('@/views/Entities/EquipmentDetail.vue'),
-    meta: {
-      title: '仪器详情',
-      requiresAuth: true
-    }
+    component: () => import('@/layouts/BaseLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', redirect: '/dashboard' },
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/Dashboard/index.vue'),
+        meta: { title: '运营首页', requiresAuth: true }
+      },
+      {
+        path: 'entities',
+        name: 'Entities',
+        component: () => import('@/views/Entities/index.vue'),
+        meta: { title: '实体统计', requiresAuth: true }
+      },
+      {
+        path: 'entities/equipment/:id',
+        name: 'EquipmentDetail',
+        component: () => import('@/views/Entities/EquipmentDetail.vue'),
+        meta: { title: '仪器详情', requiresAuth: true }
+      },
+      {
+        path: 'operation/platform',
+        name: 'PlatformOperation',
+        component: () => import('@/views/Operation/Platform.vue'),
+        meta: { title: '平台运营', requiresAuth: true }
+      },
+      {
+        path: 'operation/equipment',
+        name: 'EquipmentOperation',
+        component: () => import('@/views/Operation/Equipment.vue'),
+        meta: { title: '仪器运营', requiresAuth: true }
+      },
+      {
+        path: 'operation/user',
+        name: 'UserOperation',
+        component: () => import('@/views/Operation/User.vue'),
+        meta: { title: '用户运营', requiresAuth: true }
+      },
+      {
+        path: 'operation/training',
+        name: 'TrainingOperation',
+        component: () => import('@/views/Operation/Training.vue'),
+        meta: { title: '培训运营', requiresAuth: true }
+      }
+    ]
   }
 ]
 
