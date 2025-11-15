@@ -176,58 +176,20 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-/* 复用 Entities 科技风格样式（同主页面） */
+@import '@/styles/variables.scss';
 .entities-container {
   position: relative;
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background: #0a0e27;
+  background: $bg-page;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 40px 20px;
 }
 
-.bg-animation {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  .bg-gradient {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 25%, #2a1f3f 50%, #1a1f3a 75%, #0a0e27 100%);
-    animation: gradientShift 15s ease infinite;
-  }
-  .grid-lines {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0.08;
-    .grid-line {
-      position: absolute;
-      background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-      &.horizontal { width: 100%; height: 1px; }
-      &.vertical { width: 1px; height: 100%; }
-    }
-  }
-  .particles {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    .particle {
-      position: absolute;
-      background: #00d4ff;
-      border-radius: 50%;
-      opacity: 0.4;
-      animation: particleFloat linear infinite;
-      box-shadow: 0 0 8px #00d4ff;
-    }
-  }
-}
+.bg-animation { display: none; }
 
 @keyframes gradientShift {
   0% { filter: hue-rotate(0deg); }
@@ -242,14 +204,13 @@ onMounted(() => {
 .entities-box {
   position: relative;
   z-index: 1;
-  width: 1100px;
-  max-width: 95%;
+  width: 100%;
+  max-width: 100%;
   margin-top: 10px;
   border-radius: 16px;
-  background: rgba(15, 20, 40, 0.75);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(18px);
+  background: $bg-color;
+  border: 1px solid $border-light;
+  box-shadow: $box-shadow-light;
   overflow: hidden;
   padding-bottom: 24px;
 
@@ -264,49 +225,7 @@ onMounted(() => {
     &.br { bottom: 10px; right: 10px; }
   }
 
-  .box-header {
-    padding: 28px 36px 12px;
-    text-align: center;
-
-    .logo-wrapper {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 8px;
-
-      .logo-icon {
-        color: #00d4ff;
-        filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.7));
-      }
-      .logo-glow {
-        position: absolute;
-        width: 90px; height: 90px;
-        background: radial-gradient(circle, rgba(0, 212, 255, 0.25), transparent 70%);
-        border-radius: 50%;
-        animation: pulse 3s ease-in-out infinite;
-      }
-    }
-
-    .title {
-      font-size: 28px; font-weight: 700; color: #ffffff;
-      margin: 6px 0; letter-spacing: 2px;
-      text-shadow: 0 0 18px rgba(0, 212, 255, 0.5);
-      animation: titleGlow 3s ease-in-out infinite;
-    }
-
-    .subtitle {
-      font-size: 12px; font-weight: 300; color: #00d4ff;
-      letter-spacing: 3px; opacity: 0.8; margin-bottom: 14px;
-    }
-
-    .title-divider {
-      width: 60px; height: 3px; margin: 0 auto;
-      background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-    }
-  }
+  .box-header { display: none; }
 
   .detail-content {
     padding: 0 24px 24px;
@@ -315,62 +234,31 @@ onMounted(() => {
 
 .section-card {
   margin-top: 16px;
-  background: rgba(15, 20, 40, 0.85);
+  background: $bg-color;
   border-radius: 12px;
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid $border-light;
+  box-shadow: $box-shadow-light;
   overflow: hidden;
   transition: all 0.3s ease;
 
-  &:hover {
-    border-color: rgba(0, 212, 255, 0.4);
-    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.22);
-    transform: translateY(-2px);
-  }
+  &:hover { transform: translateY(-1px); }
 
   .section-header {
     display: flex; align-items: center; gap: 12px; padding: 16px 22px;
-    background: rgba(0, 212, 255, 0.05); border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-    h3 { font-size: 16px; font-weight: 600; color: #ffffff; margin: 0; letter-spacing: 1px; }
-    .header-line { flex: 1; height: 2px; background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), transparent); margin-left: auto; }
+    background: $bg-color; border-bottom: 1px solid $border-light;
+    h3 { font-size: 16px; font-weight: 600; color: $text-primary; margin: 0; letter-spacing: 0.5px; }
+    .header-line { display: none; }
   }
 
   .card-body {
     padding: 22px;
 
-    .filter-bar {
-      display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;
-      :deep(.el-input__wrapper),
-      :deep(.el-date-editor) {
-        background-color: rgba(255,255,255,0.06);
-        border-color: rgba(0, 212, 255, 0.4);
-        color: #ffffff;
-      }
-      :deep(.el-input__inner),
-      :deep(.el-range-input) {
-        color: #ffffff;
-      }
-      :deep(.el-input__inner::placeholder),
-      :deep(.el-range-input::placeholder) {
-        color: #b8dfff;
-        opacity: 0.9;
-      }
-    }
+    .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
 
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; color: #cfe8ff;
-      .empty-icon { font-size: 42px; color: #00d4ff; }
-    }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: $text-regular; .empty-icon { font-size: 42px; color: $primary-color; } }
 
     .table-wrapper { overflow-x: auto; }
-    .tech-table {
-      width: 100%;
-      border-collapse: collapse;
-      color: #cfe8ff;
-      th, td { border-bottom: 1px solid rgba(0, 212, 255, 0.2); padding: 12px; text-align: left; }
-      th { color: #00d4ff; font-weight: 600; }
-    }
+    .tech-table { width: 100%; border-collapse: collapse; color: $text-primary; th, td { border-bottom: 1px solid $border-light; padding: 12px; text-align: left; } th { color: $text-regular; font-weight: 600; } }
   }
 }
 
@@ -379,20 +267,17 @@ onMounted(() => {
 
   .back-button {
     display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-    background: linear-gradient(135deg, rgba(0, 212, 255, 0.85), rgba(0, 160, 220, 0.85));
-    border: 1px solid rgba(0, 212, 255, 0.5); border-radius: 8px; color: #ffffff;
-    font-size: 13px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 12px rgba(0, 212, 255, 0.25);
-    &:hover { transform: translateY(-2px); box-shadow: 0 4px 18px rgba(0, 212, 255, 0.5); }
-    &:active { transform: translateY(0); }
+    background: $primary-color;
+    border: 1px solid transparent; border-radius: 8px; color: #ffffff;
+    font-size: 13px; cursor: pointer; transition: all 0.2s ease; box-shadow: $box-shadow-base;
+    &:hover { opacity: 0.9; }
+    &:active { opacity: 1; }
   }
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.1); opacity: 1; }
-}
-@keyframes titleGlow {
-  0%, 100% { text-shadow: 0 0 18px rgba(0, 212, 255, 0.5); }
-  50% { text-shadow: 0 0 24px rgba(0, 212, 255, 0.8); }
-}
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes titleGlow { 0%, 100% { text-shadow: none; } 50% { text-shadow: none; } }
+
+/* 隐藏深色背景动画元素 */
+.bg-animation, .bg-gradient, .grid-lines, .particles { display: none; }
 </style>

@@ -192,7 +192,8 @@ const handleLogin = async () => {
 </script>
 
 <style lang="scss" scoped>
-// 科技风格登录页面样式
+@import '@/styles/variables.scss';
+
 .login-container {
   position: relative;
   display: flex;
@@ -201,318 +202,78 @@ const handleLogin = async () => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0a0e27;
+  background: $bg-page;
 
   // 背景动画层
-  .bg-animation {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-
-    // 渐变背景
-    .bg-gradient {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg,
-        #0a0e27 0%,
-        #1a1f3a 25%,
-        #2a1f3f 50%,
-        #1a1f3a 75%,
-        #0a0e27 100%);
-      animation: gradientShift 15s ease infinite;
-    }
-
-    // 网格线
-    .grid-lines {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      opacity: 0.1;
-
-      .grid-line {
-        position: absolute;
-        background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-
-        &.horizontal {
-          width: 100%;
-          height: 1px;
-        }
-
-        &.vertical {
-          width: 1px;
-          height: 100%;
-        }
-      }
-    }
-
-    // 浮动粒子
-    .particles {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-
-      .particle {
-        position: absolute;
-        background: #00d4ff;
-        border-radius: 50%;
-        opacity: 0.6;
-        animation: particleFloat linear infinite;
-        box-shadow: 0 0 10px #00d4ff;
-      }
-    }
-  }
+  .bg-animation { display: none; }
 
   // 登录卡片
   .login-box {
     position: relative;
     width: 480px;
-    padding: 50px 45px;
-    background: rgba(15, 20, 40, 0.85);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      0 0 80px rgba(0, 212, 255, 0.1),
-      inset 0 0 80px rgba(0, 212, 255, 0.03);
+    padding: 40px 36px;
+    background: $bg-color;
+    border-radius: 12px;
+    border: 1px solid $border-light;
+    box-shadow: $box-shadow-light;
     z-index: 1;
-    animation: boxFloat 6s ease-in-out infinite;
 
     // 装饰性边角
-    .corner-decoration {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      border: 2px solid #00d4ff;
-      opacity: 0.6;
-
-      &.tl {
-        top: -1px;
-        left: -1px;
-        border-right: none;
-        border-bottom: none;
-        border-top-left-radius: 20px;
-      }
-
-      &.tr {
-        top: -1px;
-        right: -1px;
-        border-left: none;
-        border-bottom: none;
-        border-top-right-radius: 20px;
-      }
-
-      &.bl {
-        bottom: -1px;
-        left: -1px;
-        border-right: none;
-        border-top: none;
-        border-bottom-left-radius: 20px;
-      }
-
-      &.br {
-        bottom: -1px;
-        right: -1px;
-        border-left: none;
-        border-top: none;
-        border-bottom-right-radius: 20px;
-      }
-    }
+    .corner-decoration { display: none; }
 
     // Logo 和标题
     .login-header {
       text-align: center;
       margin-bottom: 45px;
 
-      .logo-wrapper {
-        position: relative;
-        display: inline-block;
-        margin-bottom: 25px;
-
-        .logo-icon {
-          position: relative;
-          color: #00d4ff;
-          animation: logoRotate 20s linear infinite;
-          filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.6));
-          z-index: 1;
-        }
-
-        .logo-glow {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 100px;
-          height: 100px;
-          background: radial-gradient(circle, rgba(0, 212, 255, 0.3), transparent 70%);
-          border-radius: 50%;
-          animation: pulse 3s ease-in-out infinite;
-        }
-      }
+      .logo-wrapper { margin-bottom: 16px; }
+      .logo-icon { color: $primary-color; }
 
       .title {
-        font-size: 32px;
-        font-weight: 700;
-        color: #ffffff;
-        margin-bottom: 12px;
-        letter-spacing: 2px;
-        text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        animation: titleGlow 3s ease-in-out infinite;
+        font-size: 28px;
+        font-weight: 600;
+        color: $text-primary;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
       }
 
       .subtitle {
-        font-size: 13px;
-        font-weight: 300;
-        color: #00d4ff;
-        letter-spacing: 3px;
-        opacity: 0.8;
-        margin-bottom: 20px;
+        font-size: 12px;
+        font-weight: 400;
+        color: $text-secondary;
+        letter-spacing: 2px;
+        margin-bottom: 16px;
       }
 
-      .title-divider {
-        width: 60px;
-        height: 3px;
-        margin: 0 auto;
-        background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-        border-radius: 2px;
-        box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-      }
+      .title-divider { display: none; }
     }
 
     // 登录表单
     .login-form {
-      .input-wrapper {
-        position: relative;
-
-        :deep(.el-input) {
-          .el-input__wrapper {
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            box-shadow: none;
-            transition: all 0.3s ease;
-
-            &:hover {
-              border-color: rgba(0, 212, 255, 0.5);
-              background: rgba(0, 212, 255, 0.08);
-            }
-
-            &.is-focus {
-              border-color: #00d4ff;
-              background: rgba(0, 212, 255, 0.1);
-              box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-            }
-
-            input {
-              color: #ffffff;
-
-              &::placeholder {
-                color: rgba(255, 255, 255, 0.4);
-              }
-            }
-
-            .el-input__prefix {
-              color: #00d4ff;
-            }
-
-            .el-input__suffix {
-              color: #00d4ff;
-            }
-          }
-        }
-
-        .input-border {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 0;
-          height: 2px;
-          background: linear-gradient(90deg, #00d4ff, #00ff88);
-          transition: width 0.3s ease;
-          box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-
-        &:focus-within .input-border {
-          width: 100%;
-        }
-      }
+      .input-wrapper { position: relative; }
 
       // 登录按钮
       .login-button {
         position: relative;
         width: 100%;
-        height: 50px;
-        margin-top: 20px;
-        background: linear-gradient(135deg, #00d4ff, #00a8cc);
+        height: 46px;
+        margin-top: 16px;
+        background: $primary-color;
         border: none;
         border-radius: 8px;
-        color: #ffffff;
+        color: #fff;
         font-size: 16px;
         font-weight: 600;
-        letter-spacing: 4px;
+        letter-spacing: 2px;
         cursor: pointer;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        transition: all 0.2s ease;
+        box-shadow: $box-shadow-base;
 
-        &:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 25px rgba(0, 212, 255, 0.5);
+        &:hover:not(:disabled) { opacity: 0.9; }
+        &:active:not(:disabled) { opacity: 1; }
+        &:disabled { opacity: 0.6; cursor: not-allowed; }
 
-          .button-shine {
-            left: 100%;
-          }
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .button-content {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          z-index: 1;
-
-          .loading-icon {
-            animation: rotate 1s linear infinite;
-          }
-        }
-
-        .button-glow {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 70%);
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        &:hover:not(:disabled) .button-glow {
-          opacity: 1;
-        }
-
-        .button-shine {
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-          transition: left 0.6s ease;
-        }
+        .button-content { display: flex; align-items: center; justify-content: center; gap: 8px; }
       }
     }
 
@@ -520,102 +281,12 @@ const handleLogin = async () => {
     .login-footer {
       margin-top: 30px;
 
-      .tips {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font-size: 13px;
-        color: rgba(0, 212, 255, 0.7);
-        margin-bottom: 15px;
+      .tips { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: $text-secondary; margin-bottom: 12px; }
 
-        .el-icon {
-          font-size: 16px;
-        }
-      }
-
-      .version {
-        text-align: center;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.3);
-        letter-spacing: 1px;
-      }
+      .version { text-align: center; font-size: 12px; color: $text-placeholder; letter-spacing: 1px; }
     }
   }
 }
 
-// 动画定义
-@keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes particleFloat {
-  0% {
-    transform: translateY(100vh) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-@keyframes boxFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes logoRotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.3;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0.5;
-  }
-}
-
-@keyframes titleGlow {
-  0%, 100% {
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-  }
-  50% {
-    text-shadow: 0 0 30px rgba(0, 212, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.4);
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 </style>
 
