@@ -8,7 +8,7 @@ import { ElMessage } from 'element-plus'
 // 创建 axios 实例
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL, // API 基础路径
-  timeout: 30000 // 请求超时时间 30秒
+  timeout: 60000 // 请求超时时间 60秒
 })
 
 // 请求拦截器
@@ -19,22 +19,41 @@ service.interceptors.request.use(
     if (security) {
       config.headers['securityCode'] = security
       config.headers['securitycode'] = security
+      config.headers['AsecurityCode'] = security  // 添加AsecurityCode头部
+      config.headers['Asecuritycode'] = security  // 添加小写版本
     } else {
       console.warn('未配置 VITE_SECURITY_CODE，部分接口可能校验失败')
+    }
+    
+    // 添加园区ID头部
+    const parkId = import.meta.env.VITE_PARK_ID
+    if (parkId) {
+      config.headers['parkId'] = parkId
     }
 
     const method = String(config.method || 'get').toLowerCase()
     const url = String(config.url || '')
     const isOperateDock = url.includes('/operateDock/')
     const isLogin = url.includes('/operateDock/accountLogin')
+    
+    // 添加详细的请求日志
+    if (url.includes('/operateDock/eqStatistics')) {
+      console.log('=== 仪器统计接口请求详情 ===')
+      console.log('URL:', url)
+      console.log('Method:', method)
+      console.log('Headers:', config.headers)
+      console.log('Data:', config.data)
+      console.log('==========================')
+    }
 
     if (method === 'post' && !config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json'
     }
 
-    // 登录接口不注入 id；其他运营接口注入 id
+    // 登录接口不注入 id；其他运营接口注入 id (排除仪器统计接口)
     const parkIdEnv = import.meta.env.VITE_PARK_ID
-    const shouldInjectParkId = isOperateDock && !isLogin
+    const isEqStatistics = url.includes('/operateDock/eqStatistics')
+    const shouldInjectParkId = isOperateDock && !isLogin && !isEqStatistics
     if (shouldInjectParkId && parkIdEnv) {
       const id = parkIdEnv
       if (method === 'get') {
@@ -63,6 +82,8 @@ service.interceptors.response.use(
   response => {
     const res = response.data
     console.log('API响应:', res)
+    console.log('请求URL:', response.config.url)
+    console.log('请求头:', response.config.headers)
 
     const success =
       res.code === '00000' ||
@@ -75,6 +96,7 @@ service.interceptors.response.use(
       return res
     } else {
       console.error('业务错误:', res)
+      console.error('错误响应数据:', JSON.stringify(res, null, 2))
       const msg = res.msg || res.message || res.errorMsg || '请求失败'
       ElMessage.error(msg)
       return Promise.reject(new Error(msg))
@@ -83,6 +105,9 @@ service.interceptors.response.use(
   error => {
     // HTTP 错误处理
     console.error('响应错误:', error)
+    console.error('错误请求URL:', error.config?.url)
+    console.error('错误请求头:', error.config?.headers)
+    console.error('错误响应:', error.response?.data)
 
     let message = '网络请求失败'
     if (error.response) {

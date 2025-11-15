@@ -35,6 +35,23 @@
           <el-menu-item index="/operation/user">用户运营</el-menu-item>
           <el-menu-item index="/operation/training">培训运营</el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="usage">
+          <template #title>
+            <el-icon><TrendCharts /></el-icon>
+            <span>使用统计</span>
+          </template>
+          <el-menu-item index="/usage/equipment">仪器使用</el-menu-item>
+          <el-menu-item index="/usage/user">用户使用</el-menu-item>
+          <el-menu-item index="/usage/group">课题组使用</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="performance">
+          <template #title>
+            <el-icon><TrendCharts /></el-icon>
+            <span>业绩统计</span>
+          </template>
+          <el-menu-item index="/performance/admin">管理员业绩统计</el-menu-item>
+          <el-menu-item index="/performance/platform">平台业绩统计</el-menu-item>
+        </el-sub-menu>
       </el-menu>
       <div class="collapse-bar">
         <el-button text @click="collapsed = !collapsed">
@@ -105,7 +122,7 @@ const keyword = ref('')
 
 const activeMenu = computed(() => route.fullPath.startsWith('/entities') ? '/entities' : route.path)
 const pageTitle = computed(() => route.meta.title || '')
-const isTopHeaderRoute = computed(() => ['Dashboard', 'Entities', 'EquipmentDetail', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation'].includes(String(route.name)))
+const isTopHeaderRoute = computed(() => ['Dashboard', 'Entities', 'EquipmentDetail', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform'].includes(String(route.name)))
 const headerTitle = computed(() => {
   if (route.name === 'Dashboard') return '运营首页'
   if (route.name === 'Entities') return '实体统计'
@@ -114,6 +131,9 @@ const headerTitle = computed(() => {
   if (route.name === 'EquipmentOperation') return '仪器运营'
   if (route.name === 'UserOperation') return '用户运营'
   if (route.name === 'TrainingOperation') return '培训运营'
+  if (route.name === 'UsageEquipment') return '使用统计'
+  if (route.name === 'PerformanceAdmin') return '业绩统计'
+  if (route.name === 'PerformancePlatform') return '业绩统计'
   return pageTitle.value
 })
 const headerSubtitle = computed(() => {
@@ -124,6 +144,9 @@ const headerSubtitle = computed(() => {
   if (route.name === 'EquipmentOperation') return 'EQUIPMENT OPERATION'
   if (route.name === 'UserOperation') return 'USER OPERATION'
   if (route.name === 'TrainingOperation') return 'TRAINING OPERATION'
+  if (route.name === 'UsageEquipment') return 'USAGE STATISTICS'
+  if (route.name === 'PerformanceAdmin') return 'PERFORMANCE ANALYTICS'
+  if (route.name === 'PerformancePlatform') return 'PERFORMANCE ANALYTICS'
   return ''
 })
 

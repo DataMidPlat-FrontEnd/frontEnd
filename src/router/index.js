@@ -63,6 +63,36 @@ const routes = [
         name: 'TrainingOperation',
         component: () => import('@/views/Operation/Training.vue'),
         meta: { title: '培训运营', requiresAuth: true }
+      },
+      {
+        path: 'usage/equipment',
+        name: 'UsageEquipment',
+        component: () => import('@/views/Usage/Equipment.vue'),
+        meta: { title: '仪器使用统计', requiresAuth: true }
+      },
+      {
+        path: 'usage/user',
+        name: 'UsageUser',
+        component: () => import('@/views/Usage/User.vue'),
+        meta: { title: '用户使用统计', requiresAuth: true }
+      },
+      {
+        path: 'usage/group',
+        name: 'UsageGroup',
+        component: () => import('@/views/Usage/Pi.vue'),
+        meta: { title: '课题组使用统计', requiresAuth: true }
+      },
+      {
+        path: 'performance/admin',
+        name: 'PerformanceAdmin',
+        component: () => import('@/views/Performance/Admin.vue'),
+        meta: { title: '管理员业绩统计', requiresAuth: true }
+      },
+      {
+        path: 'performance/platform',
+        name: 'PerformancePlatform',
+        component: () => import('@/views/Performance/Platform.vue'),
+        meta: { title: '平台业绩统计', requiresAuth: true }
       }
     ]
   }
