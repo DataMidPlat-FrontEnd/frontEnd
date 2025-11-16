@@ -29,16 +29,28 @@ const routes = [
         meta: { title: '运营首页', requiresAuth: true }
       },
       {
-        path: 'entities',
-        name: 'Entities',
-        component: () => import('@/views/Entities/index.vue'),
-        meta: { title: '实体统计', requiresAuth: true }
+        path: 'entities/building',
+        name: 'Building',
+        component: () => import('@/views/Entities/Building.vue'),
+        meta: { title: '建筑统计', requiresAuth: true }
       },
       {
-        path: 'entities/equipment/:id',
-        name: 'EquipmentDetail',
-        component: () => import('@/views/Entities/EquipmentDetail.vue'),
-        meta: { title: '仪器详情', requiresAuth: true }
+        path: 'entities/floor',
+        name: 'Floor',
+        component: () => import('@/views/Entities/Floor.vue'),
+        meta: { title: '楼层统计', requiresAuth: true }
+      },
+      {
+        path: 'entities/room',
+        name: 'Room',
+        component: () => import('@/views/Entities/Room.vue'),
+        meta: { title: '房间统计', requiresAuth: true }
+      },
+      {
+        path: 'entities/equipment',
+        name: 'Equipment',
+        component: () => import('@/views/Entities/Equipment.vue'),
+        meta: { title: '仪器统计', requiresAuth: true }
       },
       {
         path: 'operation/platform',

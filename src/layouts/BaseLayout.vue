@@ -20,10 +20,10 @@
             <el-icon><Collection /></el-icon>
             <span>实体统计</span>
           </template>
-          <el-menu-item index="/entities?tab=building">建筑统计</el-menu-item>
-          <el-menu-item index="/entities?tab=floor">楼层统计</el-menu-item>
-          <el-menu-item index="/entities?tab=room">房间统计</el-menu-item>
-          <el-menu-item index="/entities?tab=equipment">仪器统计</el-menu-item>
+          <el-menu-item index="/entities/building">建筑统计</el-menu-item>
+          <el-menu-item index="/entities/floor">楼层统计</el-menu-item>
+          <el-menu-item index="/entities/room">房间统计</el-menu-item>
+          <el-menu-item index="/entities/equipment">仪器统计</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="operation">
           <template #title>
@@ -144,11 +144,13 @@ const keyword = ref('')
 
 const activeMenu = computed(() => route.fullPath.startsWith('/entities') ? '/entities' : route.path)
 const pageTitle = computed(() => route.meta.title || '')
-const isTopHeaderRoute = computed(() => ['Dashboard', 'Entities', 'EquipmentDetail', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform', 'RoiBuy', 'RoiRepair', 'RoiTrain'].includes(String(route.name)))
+const isTopHeaderRoute = computed(() => ['Dashboard', 'Building', 'Floor', 'Room', 'Equipment', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform', 'RoiBuy', 'RoiRepair', 'RoiTrain'].includes(String(route.name)))
 const headerTitle = computed(() => {
   if (route.name === 'Dashboard') return '运营首页'
-  if (route.name === 'Entities') return '实体统计'
-  if (route.name === 'EquipmentDetail') return '仪器详情'
+  if (route.name === 'Building') return '建筑统计'
+  if (route.name === 'Floor') return '楼层统计'
+  if (route.name === 'Room') return '房间统计'
+  if (route.name === 'Equipment') return '仪器统计'
   if (route.name === 'PlatformOperation') return '平台运营'
   if (route.name === 'EquipmentOperation') return '仪器运营'
   if (route.name === 'UserOperation') return '用户运营'
@@ -163,8 +165,10 @@ const headerTitle = computed(() => {
 })
 const headerSubtitle = computed(() => {
   if (route.name === 'Dashboard') return 'OPERATION DASHBOARD'
-  if (route.name === 'Entities') return 'ENTITIES ANALYTICS'
-  if (route.name === 'EquipmentDetail') return 'EQUIPMENT DETAIL'
+  if (route.name === 'Building') return 'BUILDING ANALYTICS'
+  if (route.name === 'Floor') return 'FLOOR ANALYTICS'
+  if (route.name === 'Room') return 'ROOM ANALYTICS'
+  if (route.name === 'Equipment') return 'EQUIPMENT ANALYTICS'
   if (route.name === 'PlatformOperation') return 'PLATFORM OPERATION'
   if (route.name === 'EquipmentOperation') return 'EQUIPMENT OPERATION'
   if (route.name === 'UserOperation') return 'USER OPERATION'
