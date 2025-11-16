@@ -1,18 +1,16 @@
 <template>
-  <div class="entities-container">
-    <!-- 背景动画层 -->
-    <div class="bg-animation">
-      <div class="bg-gradient"></div>
-      <div class="grid-lines">
-        <div v-for="i in 20" :key="`h-${i}`" class="grid-line horizontal" :style="{ top: `${i * 5}%` }"></div>
-        <div v-for="i in 20" :key="`v-${i}`" class="grid-line vertical" :style="{ left: `${i * 5}%` }"></div>
-      </div>
-      <div class="particles">
-        <div v-for="i in 30" :key="`p-${i}`" class="particle" :style="getParticleStyle(i)"></div>
-      </div>
-    </div>
+  <div class="entities-page">
+    <!-- 页面标题 -->
+    <el-card class="page-header">
+      <template #header>
+        <div class="card-header">
+          <span>实体统计</span>
+          <el-button type="primary" @click="goDashboard">返回运营首页</el-button>
+        </div>
+      </template>
+    </el-card>
 
-    <!-- 内容卡片 -->
+    <!-- 内容区域 -->
     <div class="entities-box">
       <div class="corner-decoration tl"></div>
       <div class="corner-decoration tr"></div>

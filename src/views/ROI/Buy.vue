@@ -1,9 +1,9 @@
 <template>
-  <div class="usage-equipment">
+  <div class="roi-buy">
     <el-card class="page-header" v-loading="loading">
       <template #header>
         <div class="card-header">
-          <span>仪器使用统计</span>
+          <span>购置投入产出分析</span>
           <el-button type="primary" plain @click="exportData">导出报表</el-button>
         </div>
       </template>
@@ -50,11 +50,11 @@
             </el-select>
           </el-form-item>
 
-          <!-- 关键字 -->
-          <el-form-item label="关键字">
+          <!-- 仪器关键字 -->
+          <el-form-item label="仪器关键字">
             <el-input
               v-model="keyword"
-              placeholder="仪器名称/资产编号/位置"
+              placeholder="仪器名称/资产编号"
               clearable
               style="width: 220px"
               @keyup.enter="fetchData"
@@ -71,31 +71,18 @@
       <!-- 表格 + 分页 -->
       <el-card class="table-card" v-if="total > 0">
         <el-table :data="tableData" border stripe height="540">
-          <el-table-column prop="name" label="仪器名称" min-width="240" />
+          <el-table-column prop="name" label="仪器名称" min-width="200" />
           <el-table-column prop="code" label="资产编号" min-width="140" />
-          <el-table-column prop="platform" label="所属平台" min-width="160" />
-          <el-table-column prop="location" label="位置" min-width="220" />
-          <el-table-column prop="usage" label="使用率(%)" min-width="120" :formatter="fmtPercent" />
-          <el-table-column prop="tTime" label="总机时(h)" min-width="120" :formatter="fmtNum" />
-          <el-table-column prop="iTime" label="内部机时(h)" min-width="120" :formatter="fmtNum" />
-          <el-table-column prop="oTime" label="外部机时(h)" min-width="120" :formatter="fmtNum" />
-          <el-table-column prop="sample" label="样品数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="materials" label="耗材数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="tAmount" label="总次数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="iAmount" label="内部次数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="oAmount" label="外部次数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="tUser" label="总人数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="iUser" label="内部人数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="oUser" label="外部人数" min-width="100" :formatter="fmtInt" />
-          <el-table-column prop="tGroup" label="总课题组" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="iGroup" label="内部课题组" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="oGroup" label="外部课题组" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="tCard" label="总经费卡" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="iCard" label="内部经费卡" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="oCard" label="外部经费卡" min-width="120" :formatter="fmtInt" />
-          <el-table-column prop="tIncome" label="总收入(元)" min-width="140" :formatter="fmtMoney" />
-          <el-table-column prop="iIncome" label="内部收入(元)" min-width="140" :formatter="fmtMoney" />
-          <el-table-column prop="oIncome" label="外部收入(元)" min-width="140" :formatter="fmtMoney" />
+          <el-table-column prop="platform" label="所属平台" min-width="200" />
+          <el-table-column prop="worth" label="仪器价值(元)" min-width="140" :formatter="fmtMoney" />
+          <el-table-column prop="parts" label="配件价值(元)" min-width="140" :formatter="fmtMoney" />
+          <el-table-column prop="tTime" label="共享时长(h)" min-width="120" :formatter="fmtNum" />
+          <el-table-column prop="tAmount" label="共享次数" min-width="120" :formatter="fmtInt" />
+          <el-table-column prop="tIncome" label="共享收入(元)" min-width="140" :formatter="fmtMoney" />
+          <el-table-column prop="tCard" label="支撑科研项目数" min-width="160" :formatter="fmtInt" />
+          <el-table-column prop="iCard" label="支撑内部科研项目数" min-width="180" :formatter="fmtInt" />
+          <el-table-column prop="oCard" label="支撑外部科研项目数" min-width="180" :formatter="fmtInt" />
+          <el-table-column prop="inputOutputRatio" label="投入产出比" min-width="120" :formatter="fmtPercent" />
         </el-table>
 
         <!-- 后端分页 -->
@@ -120,7 +107,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { getEquipmentUsage } from '@/api/usage'
+import { getBuyStatistics } from '@/api/usage'
 import { ElMessage } from 'element-plus'
 
 const loading = ref(false)
@@ -137,7 +124,7 @@ const pageSize = ref(20)
 const total = ref(0)
 const tableData = ref([])
 
-/* 平台下拉选项（静态，可自行调整） */
+/* 平台下拉选项（使用真实平台ID） */
 const platformOptions = ref([
   { id: 8, name: '公共技术服务中心-影像成像子平台' },
   { id: 10, name: '公共技术服务中心-蛋白与代谢组学子平台' },
@@ -176,7 +163,7 @@ const fetchData = async () => {
     }
 
     console.log('发送请求参数:', JSON.stringify(params, null, 2))
-    const res = await getEquipmentUsage(params)
+    const res = await getBuyStatistics(params)
     console.log('收到响应:', res)
     if (res.code === '00000' || res.code === 0) {
       // 响应数据直接是数组，没有total字段，需要手动计算
@@ -185,29 +172,17 @@ const fetchData = async () => {
       tableData.value = data.map(d => ({
         name: d.name,
         code: d.code,
-        location: d.location,
-        platform: d.platform,
-        usage: Number(d.usage ?? 0),
+        platform: d.platform || '未知平台',  // 处理平台为null的情况
+        worth: Number(d.worth ?? 0),
+        parts: Number(d.parts ?? 0),
         tTime: Number(d.tTime ?? 0),
-        iTime: Number(d.iTime ?? 0),
-        oTime: Number(d.oTime ?? 0),
-        sample: Number(d.sample ?? 0),
-        materials: Number(d.materials ?? 0),
         tAmount: Number(d.tAmount ?? 0),
-        iAmount: Number(d.iAmount ?? 0),
-        oAmount: Number(d.oAmount ?? 0),
-        tUser: Number(d.tUser ?? 0),
-        iUser: Number(d.iUser ?? 0),
-        oUser: Number(d.oUser ?? 0),
-        tGroup: Number(d.tGroup ?? 0),
-        iGroup: Number(d.iGroup ?? 0),
-        oGroup: Number(d.oGroup ?? 0),
+        tIncome: Number(d.tIncome ?? 0),
         tCard: Number(d.tCard ?? 0),
         iCard: Number(d.iCard ?? 0),
         oCard: Number(d.oCard ?? 0),
-        tIncome: Number(d.tIncome ?? 0),
-        iIncome: Number(d.iIncome ?? 0),
-        oIncome: Number(d.oIncome ?? 0)
+        // 处理百分比字符串，如 "41.77%" -> 41.77
+        inputOutputRatio: parseFloat(d.inputOutputRatio || '0')
       }))
     } else {
       ElMessage.error(res.msg || '获取数据失败')
@@ -238,8 +213,8 @@ const resetFilter = () => {
 /* 格式化 */
 const fmtNum = (_, __, cell) => cell.toFixed(2)
 const fmtInt = (_, __, cell) => cell
-const fmtPercent = (_, __, cell) => cell.toFixed(2)
 const fmtMoney = (_, __, cell) => cell.toFixed(2)
+const fmtPercent = (_, __, cell) => cell.toFixed(2) + '%'
 
 const exportData = () => {
   ElMessage.info('导出功能待接入')
@@ -255,17 +230,49 @@ watch(queryType, (newVal) => {
 })
 
 onMounted(() => {
-  console.log('Equipment.vue 组件挂载，准备加载数据...')
+  console.log('Buy.vue 组件挂载，准备加载数据...')
   fetchData()
 })
 </script>
 
 <style lang="scss" scoped>
-.usage-equipment { padding: 16px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 600; }
-.filter-section { margin-bottom: 16px; padding: 16px; background-color: #f5f7fa; border-radius: 8px; }
-.filter-form { margin: 0; }
-.table-card { margin-top: 0; }
-.pagination { margin-top: 12px; text-align: right; }
-.empty-section { padding: 60px 0; text-align: center; }
+.roi-buy {
+  padding: 16px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.filter-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-card {
+  margin-top: 16px;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.empty-section {
+  padding: 40px 0;
+  text-align: center;
+}
 </style>

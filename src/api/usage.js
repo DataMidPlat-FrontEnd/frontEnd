@@ -69,3 +69,59 @@ export function getPlatformStatistics(params = {}) {
     timeout: 60000 // 单独设置60秒超时时间，适应40秒响应
   })
 }
+
+/**
+ * 购置投入产出分析
+ * 接口：/operateDock/buyStatistics
+ * 说明：获取仪器购置投入产出分析数据，支持平台筛选和仪器关键字搜索
+ */
+export function getBuyStatistics(params = {}) {
+  return request({
+    url: '/operateDock/buyStatistics',
+    method: 'post',
+    data: params,
+    timeout: 60000 // 单独设置60秒超时时间，适应40秒响应
+  })
+}
+
+/**
+ * 维保投入产出分析
+ * 接口：/operateDock/repairStatistics
+ * 说明：获取仪器维保投入产出分析数据，支持平台筛选和仪器关键字搜索
+ */
+export function getRepairStatistics(params = {}) {
+  return request({
+    url: '/operateDock/repairStatistics',
+    method: 'post',
+    data: params,
+    timeout: 60000 // 单独设置60秒超时时间，适应40秒响应
+  })
+}
+
+/**
+ * 培训投入产出分析
+ * 接口：/operateDock/trainStatistics
+ * 说明：获取仪器培训投入产出分析数据，支持平台筛选和仪器关键字搜索
+ */
+export function getTrainStatistics(params = {}) {
+  return request({
+    url: '/operateDock/trainStatistics',
+    method: 'post',
+    data: params,
+    timeout: 60000 // 单独设置60秒超时时间，适应40秒响应
+  })
+}
+
+/**
+ * 报警数据统计
+ * 接口：/operateDock/alarmData
+ * 说明：获取报警数据，支持按类型筛选和时段查询
+ */
+export function getAlarmData(params = {}) {
+  return request({
+    url: '/operateDock/alarmData',
+    method: 'post',
+    data: params,
+    timeout: 60000 // 单独设置60秒超时时间，适应40秒响应
+  })
+}

@@ -93,6 +93,66 @@ const routes = [
         name: 'PerformancePlatform',
         component: () => import('@/views/Performance/Platform.vue'),
         meta: { title: '平台业绩统计', requiresAuth: true }
+      },
+      {
+        path: 'roi/buy',
+        name: 'RoiBuy',
+        component: () => import('@/views/ROI/Buy.vue'),
+        meta: { title: '购置投入产出分析', requiresAuth: true }
+      },
+      {
+        path: 'roi/repair',
+        name: 'RoiRepair',
+        component: () => import('@/views/ROI/Repair.vue'),
+        meta: { title: '维保投入产出分析', requiresAuth: true }
+      },
+      {
+        path: 'roi/train',
+        name: 'RoiTrain',
+        component: () => import('@/views/ROI/Train.vue'),
+        meta: { title: '培训投入产出分析', requiresAuth: true }
+      },
+      {
+        path: 'alarm/environment',
+        name: 'AlarmEnvironment',
+        component: () => import('@/views/Alarm/Environment.vue'),
+        meta: { title: '环境超标报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/shutdown',
+        name: 'AlarmShutdown',
+        component: () => import('@/views/Alarm/Shutdown.vue'),
+        meta: { title: '忘记关机报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/theft',
+        name: 'AlarmTheft',
+        component: () => import('@/views/Alarm/Theft.vue'),
+        meta: { title: '仪器盗用报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/maintenance',
+        name: 'AlarmMaintenance',
+        component: () => import('@/views/Alarm/Maintenance.vue'),
+        meta: { title: '维保到期报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/bad-user',
+        name: 'AlarmBadUser',
+        component: () => import('@/views/Alarm/BadUser.vue'),
+        meta: { title: '劣迹用户报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/bad-behavior',
+        name: 'AlarmBadBehavior',
+        component: () => import('@/views/Alarm/BadBehavior.vue'),
+        meta: { title: '劣迹行为报警', requiresAuth: true }
+      },
+      {
+        path: 'alarm/violation',
+        name: 'AlarmViolation',
+        component: () => import('@/views/Alarm/Violation.vue'),
+        meta: { title: '违规行为报警', requiresAuth: true }
       }
     ]
   }
