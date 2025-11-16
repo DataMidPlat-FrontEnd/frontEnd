@@ -202,10 +202,13 @@ const exportData = () => {
   ElMessage.info('导出功能待接入')
 }
 
-/* 监听条件变化后自动刷新 - 只监听查询类型变更 */
-watch(queryType, () => {
+/* 监听查询类型变化 - 只在实时模式下自动查询 */
+watch(queryType, (newVal) => {
   page.value = 0
-  fetchData()
+  // 只有当切换到实时模式时才自动查询，切换到时段模式需要用户手动选择日期后查询
+  if (newVal === 0) {
+    fetchData()
+  }
 })
 
 onMounted(() => {

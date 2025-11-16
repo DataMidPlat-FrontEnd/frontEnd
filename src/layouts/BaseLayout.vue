@@ -52,6 +52,28 @@
           <el-menu-item index="/performance/admin">管理员业绩统计</el-menu-item>
           <el-menu-item index="/performance/platform">平台业绩统计</el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="roi">
+          <template #title>
+            <el-icon><TrendCharts /></el-icon>
+            <span>投入产出分析</span>
+          </template>
+          <el-menu-item index="/roi/buy">购置投入产出分析</el-menu-item>
+          <el-menu-item index="/roi/repair">维保投入产出分析</el-menu-item>
+          <el-menu-item index="/roi/train">培训投入产出分析</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="alarm">
+          <template #title>
+            <el-icon><Warning /></el-icon>
+            <span>报警统计</span>
+          </template>
+          <el-menu-item index="/alarm/environment">环境超标报警</el-menu-item>
+          <el-menu-item index="/alarm/shutdown">忘记关机报警</el-menu-item>
+          <el-menu-item index="/alarm/theft">仪器盗用报警</el-menu-item>
+          <el-menu-item index="/alarm/maintenance">维保到期报警</el-menu-item>
+          <el-menu-item index="/alarm/bad-user">劣迹用户报警</el-menu-item>
+          <el-menu-item index="/alarm/bad-behavior">劣迹行为报警</el-menu-item>
+          <el-menu-item index="/alarm/violation">违规行为报警</el-menu-item>
+        </el-sub-menu>
       </el-menu>
       <div class="collapse-bar">
         <el-button text @click="collapsed = !collapsed">
@@ -122,7 +144,7 @@ const keyword = ref('')
 
 const activeMenu = computed(() => route.fullPath.startsWith('/entities') ? '/entities' : route.path)
 const pageTitle = computed(() => route.meta.title || '')
-const isTopHeaderRoute = computed(() => ['Dashboard', 'Entities', 'EquipmentDetail', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform'].includes(String(route.name)))
+const isTopHeaderRoute = computed(() => ['Dashboard', 'Entities', 'EquipmentDetail', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform', 'RoiBuy', 'RoiRepair', 'RoiTrain'].includes(String(route.name)))
 const headerTitle = computed(() => {
   if (route.name === 'Dashboard') return '运营首页'
   if (route.name === 'Entities') return '实体统计'
@@ -134,6 +156,9 @@ const headerTitle = computed(() => {
   if (route.name === 'UsageEquipment') return '使用统计'
   if (route.name === 'PerformanceAdmin') return '业绩统计'
   if (route.name === 'PerformancePlatform') return '业绩统计'
+  if (route.name === 'RoiBuy') return '投入产出分析'
+  if (route.name === 'RoiRepair') return '投入产出分析'
+  if (route.name === 'RoiTrain') return '投入产出分析'
   return pageTitle.value
 })
 const headerSubtitle = computed(() => {
@@ -147,6 +172,9 @@ const headerSubtitle = computed(() => {
   if (route.name === 'UsageEquipment') return 'USAGE STATISTICS'
   if (route.name === 'PerformanceAdmin') return 'PERFORMANCE ANALYTICS'
   if (route.name === 'PerformancePlatform') return 'PERFORMANCE ANALYTICS'
+  if (route.name === 'RoiBuy') return 'ROI ANALYTICS'
+  if (route.name === 'RoiRepair') return 'ROI ANALYTICS'
+  if (route.name === 'RoiTrain') return 'ROI ANALYTICS'
   return ''
 })
 
