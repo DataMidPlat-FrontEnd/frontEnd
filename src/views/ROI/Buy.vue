@@ -123,6 +123,7 @@ const page = ref(0) // 后端从 0 开始
 const pageSize = ref(20)
 const total = ref(0)
 const tableData = ref([])
+const allData = ref([])
 
 /* 平台下拉选项（使用真实平台ID） */
 const platformOptions = ref([
@@ -166,13 +167,11 @@ const fetchData = async () => {
     const res = await getBuyStatistics(params)
     console.log('收到响应:', res)
     if (res.code === '00000' || res.code === 0) {
-      // 响应数据直接是数组，没有total字段，需要手动计算
       const data = res.data || []
-      total.value = data.length  // 暂时使用数据长度作为总数
-      tableData.value = data.map(d => ({
+      const mapped = data.map(d => ({
         name: d.name,
         code: d.code,
-        platform: d.platform || '未知平台',  // 处理平台为null的情况
+        platform: d.platform || '未知平台',
         worth: Number(d.worth ?? 0),
         parts: Number(d.parts ?? 0),
         tTime: Number(d.tTime ?? 0),
@@ -181,9 +180,11 @@ const fetchData = async () => {
         tCard: Number(d.tCard ?? 0),
         iCard: Number(d.iCard ?? 0),
         oCard: Number(d.oCard ?? 0),
-        // 处理百分比字符串，如 "41.77%" -> 41.77
         inputOutputRatio: parseFloat(d.inputOutputRatio || '0')
       }))
+      allData.value = mapped
+      total.value = mapped.length
+      tableData.value = mapped.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
     } else {
       ElMessage.error(res.msg || '获取数据失败')
     }
@@ -198,7 +199,7 @@ const fetchData = async () => {
 /* 事件 */
 const handlePageChange = (p) => {
   page.value = p - 1
-  fetchData()
+  tableData.value = allData.value.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
 }
 
 const resetFilter = () => {
