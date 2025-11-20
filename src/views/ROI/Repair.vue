@@ -119,8 +119,9 @@ const platformIds = ref([]) // 多选平台 id
 const keyword = ref('')
 
 /* 分页 */
-const page = ref(0) // 后端从 0 开始
+const page = ref(0)
 const pageSize = ref(20)
+const backendPageSize = 300
 const total = ref(0)
 const tableData = ref([])
 const allData = ref([])
@@ -145,49 +146,51 @@ const platformOptions = ref([
 const fetchData = async () => {
   loading.value = true
   try {
-    const params = {
-      platform: platformIds.value.length ? platformIds.value : [],
-      keyword: keyword.value.trim(),
-      type: queryType.value,
-      page: page.value,
-      pageSize: pageSize.value
+    const aggregated = []
+    let pageNo = 1
+    while (true) {
+      const params = {
+        platform: platformIds.value.length ? platformIds.value : [],
+        keyword: keyword.value.trim(),
+        type: queryType.value,
+        page: pageNo,
+        pageSize: backendPageSize
+      }
+      if (!params.platform) {
+        params.platform = []
+      }
+      if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+        params.beginDate = dateRange.value[0]
+        params.endDate = dateRange.value[1]
+      }
+      const res = await getRepairStatistics(params)
+      if (res.code === '00000' || res.code === 0) {
+        const data = res.data || []
+        const mapped = data.map(d => ({
+          name: d.name,
+          code: d.code,
+          platform: d.platform || '未知平台',
+          worth: Number(d.worth ?? 0),
+          year: Number(d.year ?? 0),
+          maintenance: Number(d.maintenance ?? 0),
+          mPrice: Number(d.mPrice ?? 0),
+          repair: Number(d.repair ?? 0),
+          rPrice: Number(d.rPrice ?? 0),
+          tTime: Number(d.tTime ?? 0),
+          tAmount: Number(d.tAmount ?? 0),
+          tIncome: Number(d.tIncome ?? 0)
+        }))
+        aggregated.push(...mapped)
+        if (data.length < backendPageSize) break
+        pageNo += 1
+      } else {
+        ElMessage.error(res.msg || '获取数据失败')
+        break
+      }
     }
-    
-    // 确保platform字段存在，即使是空数组
-    if (!params.platform) {
-      params.platform = []
-    }
-    // 时段查询才传日期
-    if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      params.beginDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
-    }
-
-    console.log('发送请求参数:', JSON.stringify(params, null, 2))
-    const res = await getRepairStatistics(params)
-    console.log('收到响应:', res)
-    if (res.code === '00000' || res.code === 0) {
-      const data = res.data || []
-      const mapped = data.map(d => ({
-        name: d.name,
-        code: d.code,
-        platform: d.platform || '未知平台',
-        worth: Number(d.worth ?? 0),
-        year: Number(d.year ?? 0),
-        maintenance: Number(d.maintenance ?? 0),
-        mPrice: Number(d.mPrice ?? 0),
-        repair: Number(d.repair ?? 0),
-        rPrice: Number(d.rPrice ?? 0),
-        tTime: Number(d.tTime ?? 0),
-        tAmount: Number(d.tAmount ?? 0),
-        tIncome: Number(d.tIncome ?? 0)
-      }))
-      allData.value = mapped
-      total.value = mapped.length
-      tableData.value = mapped.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
-    } else {
-      ElMessage.error(res.msg || '获取数据失败')
-    }
+    allData.value = aggregated
+    total.value = aggregated.length
+    tableData.value = aggregated.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
   } catch (e) {
     console.error('获取数据失败:', e)
     ElMessage.error('获取数据失败: ' + (e.message || '未知错误'))
