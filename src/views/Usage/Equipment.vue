@@ -132,8 +132,9 @@ const platformIds = ref([]) // 多选平台 id
 const keyword = ref('')
 
 /* 分页 */
-const page = ref(0) // 后端从 0 开始
+const page = ref(0)
 const pageSize = ref(20)
+const backendPageSize = 300
 const total = ref(0)
 const tableData = ref([])
 const allData = ref([])
@@ -158,62 +159,64 @@ const platformOptions = ref([
 const fetchData = async () => {
   loading.value = true
   try {
-    const params = {
-      platform: platformIds.value.length ? platformIds.value : [],
-      keyword: keyword.value.trim(),
-      type: queryType.value,
-      page: page.value,
-      pageSize: pageSize.value
+    const aggregated = []
+    let pageNo = 1
+    while (true) {
+      const params = {
+        platform: platformIds.value.length ? platformIds.value : [],
+        keyword: keyword.value.trim(),
+        type: queryType.value,
+        page: pageNo,
+        pageSize: backendPageSize
+      }
+      if (!params.platform) {
+        params.platform = []
+      }
+      if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+        params.beginDate = dateRange.value[0]
+        params.endDate = dateRange.value[1]
+      }
+      const res = await getEquipmentUsage(params)
+      if (res.code === '00000' || res.code === 0) {
+        const data = res.data || []
+        const mapped = data.map(d => ({
+          name: d.name,
+          code: d.code,
+          location: d.location,
+          platform: d.platform,
+          usage: Number(d.usage ?? 0),
+          tTime: Number(d.tTime ?? 0),
+          iTime: Number(d.iTime ?? 0),
+          oTime: Number(d.oTime ?? 0),
+          sample: Number(d.sample ?? 0),
+          materials: Number(d.materials ?? 0),
+          tAmount: Number(d.tAmount ?? 0),
+          iAmount: Number(d.iAmount ?? 0),
+          oAmount: Number(d.oAmount ?? 0),
+          tUser: Number(d.tUser ?? 0),
+          iUser: Number(d.iUser ?? 0),
+          oUser: Number(d.oUser ?? 0),
+          tGroup: Number(d.tGroup ?? 0),
+          iGroup: Number(d.iGroup ?? 0),
+          oGroup: Number(d.oGroup ?? 0),
+          tCard: Number(d.tCard ?? 0),
+          iCard: Number(d.iCard ?? 0),
+          oCard: Number(d.oCard ?? 0),
+          tIncome: Number(d.tIncome ?? 0),
+          iIncome: Number(d.iIncome ?? 0),
+          oIncome: Number(d.oIncome ?? 0)
+        }))
+        aggregated.push(...mapped)
+        if (data.length < backendPageSize) break
+        pageNo += 1
+      } else {
+        ElMessage.error(res.msg || '获取数据失败')
+        break
+      }
     }
-    
-    // 确保platform字段存在，即使是空数组
-    if (!params.platform) {
-      params.platform = []
-    }
-    // 时段查询才传日期
-    if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      params.beginDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
-    }
-
-    console.log('发送请求参数:', JSON.stringify(params, null, 2))
-    const res = await getEquipmentUsage(params)
-    console.log('收到响应:', res)
-    if (res.code === '00000' || res.code === 0) {
-      const data = res.data || []
-      const mapped = data.map(d => ({
-        name: d.name,
-        code: d.code,
-        location: d.location,
-        platform: d.platform,
-        usage: Number(d.usage ?? 0),
-        tTime: Number(d.tTime ?? 0),
-        iTime: Number(d.iTime ?? 0),
-        oTime: Number(d.oTime ?? 0),
-        sample: Number(d.sample ?? 0),
-        materials: Number(d.materials ?? 0),
-        tAmount: Number(d.tAmount ?? 0),
-        iAmount: Number(d.iAmount ?? 0),
-        oAmount: Number(d.oAmount ?? 0),
-        tUser: Number(d.tUser ?? 0),
-        iUser: Number(d.iUser ?? 0),
-        oUser: Number(d.oUser ?? 0),
-        tGroup: Number(d.tGroup ?? 0),
-        iGroup: Number(d.iGroup ?? 0),
-        oGroup: Number(d.oGroup ?? 0),
-        tCard: Number(d.tCard ?? 0),
-        iCard: Number(d.iCard ?? 0),
-        oCard: Number(d.oCard ?? 0),
-        tIncome: Number(d.tIncome ?? 0),
-        iIncome: Number(d.iIncome ?? 0),
-        oIncome: Number(d.oIncome ?? 0)
-      }))
-      allData.value = mapped
-      total.value = mapped.length
-      tableData.value = mapped.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
-    } else {
-      ElMessage.error(res.msg || '获取数据失败')
-    }
+    allData.value = aggregated
+    total.value = aggregated.length
+    tableData.value = aggregated.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
   } catch (e) {
     console.error('获取数据失败:', e)
     ElMessage.error('获取数据失败: ' + (e.message || '未知错误'))
