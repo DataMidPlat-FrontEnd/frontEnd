@@ -136,6 +136,7 @@ const page = ref(0) // 后端从 0 开始
 const pageSize = ref(20)
 const total = ref(0)
 const tableData = ref([])
+const allData = ref([])
 
 /* 平台下拉选项（静态，可自行调整） */
 const platformOptions = ref([
@@ -179,10 +180,8 @@ const fetchData = async () => {
     const res = await getEquipmentUsage(params)
     console.log('收到响应:', res)
     if (res.code === '00000' || res.code === 0) {
-      // 响应数据直接是数组，没有total字段，需要手动计算
       const data = res.data || []
-      total.value = data.length  // 暂时使用数据长度作为总数
-      tableData.value = data.map(d => ({
+      const mapped = data.map(d => ({
         name: d.name,
         code: d.code,
         location: d.location,
@@ -209,6 +208,9 @@ const fetchData = async () => {
         iIncome: Number(d.iIncome ?? 0),
         oIncome: Number(d.oIncome ?? 0)
       }))
+      allData.value = mapped
+      total.value = mapped.length
+      tableData.value = mapped.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
     } else {
       ElMessage.error(res.msg || '获取数据失败')
     }
@@ -223,7 +225,7 @@ const fetchData = async () => {
 /* 事件 */
 const handlePageChange = (p) => {
   page.value = p - 1
-  fetchData()
+  tableData.value = allData.value.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
 }
 
 const resetFilter = () => {
