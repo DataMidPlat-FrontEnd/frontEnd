@@ -108,6 +108,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { getManagerStatistics } from '@/api/usage'
 import { ElMessage } from 'element-plus'
+import { exportToExcel } from '@/utils/export'
 
 const loading = ref(false)
 
@@ -217,8 +218,62 @@ const fmtNum = (_, __, cell) => cell.toFixed(2)
 const fmtInt = (_, __, cell) => cell
 const fmtMoney = (_, __, cell) => cell.toFixed(2)
 
+/* 导出数据 */
 const exportData = () => {
-  ElMessage.info('导出功能待接入')
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据（导出所有数据，不仅仅是当前页）
+    const exportDataList = allData.value.map((item, index) => ({
+      '排名': index + 1,
+      '管理员名称': item.name || '未知管理员',
+      '所属平台': item.platform || '-',
+      '服务收入(万元)': item.tIncome || 0,
+      '用户审批次数': item.userApprove || 0,
+      '仪器申请审批次数': item.eqApprove || 0,
+      '经费审批次数': item.fundsApprove || 0,
+      '预约审批次数': item.bookingApprove || 0,
+      '申诉审批次数': item.appealApprove || 0,
+      '发起结算次数': item.settlement || 0,
+      '技术服务次数': item.techService || 0,
+      '仪器维护次数': item.eqMaintain || 0
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '管理员名称', label: '管理员名称', width: 18 },
+      { prop: '所属平台', label: '所属平台', width: 25 },
+      { prop: '服务收入(万元)', label: '服务收入(万元)', width: 18 },
+      { prop: '用户审批次数', label: '用户审批次数', width: 18 },
+      { prop: '仪器申请审批次数', label: '仪器申请审批次数', width: 20 },
+      { prop: '经费审批次数', label: '经费审批次数', width: 18 },
+      { prop: '预约审批次数', label: '预约审批次数', width: 18 },
+      { prop: '申诉审批次数', label: '申诉审批次数', width: 18 },
+      { prop: '发起结算次数', label: '发起结算次数', width: 18 },
+      { prop: '技术服务次数', label: '技术服务次数', width: 18 },
+      { prop: '仪器维护次数', label: '仪器维护次数', width: 18 }
+    ]
+
+    // 3. 生成文件名
+    let filename = '管理员业绩统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 /* 监听查询类型变化 - 只在实时模式下自动查询 */

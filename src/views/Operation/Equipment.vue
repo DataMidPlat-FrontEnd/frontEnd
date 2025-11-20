@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>仪器运营</span>
-          <el-button type="primary" plain>导出报表</el-button>
+          <el-button type="primary" plain @click="exportData">导出报表</el-button>
         </div>
       </template>
       
@@ -183,6 +183,7 @@ import * as echarts from 'echarts'
 import { Monitor, Clock, TrendCharts, Money, PieChart } from '@element-plus/icons-vue'
 import { getTotalEquipment } from '@/api/equipmentOperation'
 import { ElMessage } from 'element-plus'
+import { exportToExcel, exportMultiSheet } from '@/utils/export'
 
 const loading = ref(false)
 const queryType = ref(0) // 0:实时, 1:按时段
@@ -397,6 +398,73 @@ const initTrendChart = () => {
     }]
   }
   chart.setOption(option)
+}
+
+// 导出数据
+const exportData = () => {
+  // 验证是否有数据
+  if (!equipmentRanking.value || equipmentRanking.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备仪器排名数据：添加排名序号
+    const exportDataWithRank = equipmentRanking.value.map((item, index) => ({
+      '排名': index + 1,
+      '仪器名称': item.name || item.equipmentName || '未知仪器',
+      '使用量': item.amount || item.usageCount || item.count || 0,
+      '仪器ID': item.id || '-'
+    }))
+
+    // 2. 准备使用趋势数据
+    const trendData = usageTrendData.value.map(item => ({
+      '日期': item.date || '-',
+      '使用量': item.amount || 0
+    }))
+
+    // 3. 定义列配置
+    const rankingColumns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '仪器名称', label: '仪器名称', width: 35 },
+      { prop: '使用量', label: '使用量', width: 15 },
+      { prop: '仪器ID', label: '仪器ID', width: 12 }
+    ]
+
+    const trendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '使用量', label: '使用量', width: 15 }
+    ]
+
+    // 4. 生成文件名
+    let filename = '仪器运营统计'
+    if (queryType.value === 0) {
+      // 实时查询
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      // 时段查询
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 5. 调用多Sheet导出函数
+    exportMultiSheet([
+      {
+        name: '仪器排名',
+        data: exportDataWithRank,
+        columns: rankingColumns
+      },
+      {
+        name: '使用趋势',
+        data: trendData,
+        columns: trendColumns
+      }
+    ], filename)
+    
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 // 初始化

@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>用户运营</span>
-          <el-button type="primary" plain>导出报表</el-button>
+          <el-button type="primary" plain @click="exportData">导出报表</el-button>
         </div>
       </template>
       
@@ -112,6 +112,7 @@ import * as echarts from 'echarts'
 import { User, Collection, CreditCard } from '@element-plus/icons-vue'
 import { getTotalUser } from '@/api/userOperation'
 import { ElMessage } from 'element-plus'
+import { exportMultiSheet } from '@/utils/export'
 
 const loading = ref(false)
 const queryType = ref(0) // 0:实时, 1:按时段
@@ -125,6 +126,21 @@ const fundingCardCount = ref(null)
 // 图表数据
 const userTypeDistribution = ref([])
 const dailyActiveTrend = ref([])
+
+// 其他趋势数据
+const monitorTrend = ref([])
+const bookingTrend = ref([])
+const trainTrend = ref([])
+
+// 其他统计数据
+const bUser = ref(null)
+const newUser = ref(null)
+const iUser = ref(null)
+const oUser = ref(null)
+const iGroup = ref(null)
+const oGroup = ref(null)
+const iCard = ref(null)
+const oCard = ref(null)
 
 const typeChart = ref(null)
 const trendChart = ref(null)
@@ -172,8 +188,24 @@ const fetchData = async () => {
         researchGroupCount.value = data?.tGroup ?? null
         fundingCardCount.value = data?.tCard ?? null
         
+        // 其他统计数据
+        bUser.value = data?.bUser ?? null
+        newUser.value = data?.new ?? null
+        iUser.value = data?.iUser ?? null
+        oUser.value = data?.oUser ?? null
+        iGroup.value = data?.iGroup ?? null
+        oGroup.value = data?.oGroup ?? null
+        iCard.value = data?.iCard ?? null
+        oCard.value = data?.oCard ?? null
+        
+        // 图表数据
         userTypeDistribution.value = data?.userType ?? []
         dailyActiveTrend.value = data?.tTrend ?? []
+        
+        // 趋势数据
+        monitorTrend.value = data?.monitorTrend ?? []
+        bookingTrend.value = data?.bookingTrend ?? []
+        trainTrend.value = data?.trainTrend ?? []
       }
       
       nextTick(() => {
@@ -272,6 +304,178 @@ const initTrendChart = () => {
     }]
   }
   chart.setOption(option)
+}
+
+// 导出数据
+const exportData = () => {
+  // 验证是否有数据
+  if (!userCount.value && !researchGroupCount.value && !fundingCardCount.value) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备用户统计汇总数据
+    const summaryData = [{
+      '统计项目': '用户数',
+      '总计': userCount.value || 0,
+      '内部': iUser.value || 0,
+      '外部': oUser.value || 0
+    }, {
+      '统计项目': '课题组数',
+      '总计': researchGroupCount.value || 0,
+      '内部': iGroup.value || 0,
+      '外部': oGroup.value || 0
+    }, {
+      '统计项目': '经费卡数',
+      '总计': fundingCardCount.value || 0,
+      '内部': iCard.value || 0,
+      '外部': oCard.value || 0
+    }, {
+      '统计项目': '新增用户',
+      '总计': newUser.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }, {
+      '统计项目': '活跃用户',
+      '总计': bUser.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }]
+
+    // 2. 准备用户类型分布数据
+    const userTypeData = userTypeDistribution.value.map(item => ({
+      '用户类型': item.type || item.typeName || item.userType || '未知类型',
+      '数量': item.amount || item.count || 0
+    }))
+
+    // 3. 准备日活走势数据
+    const dailyTrendData = dailyActiveTrend.value.map(item => ({
+      '日期': item.date || '-',
+      '活跃用户数': item.amount || 0
+    }))
+
+    // 4. 准备监控趋势数据
+    const monitorTrendData = monitorTrend.value.map(item => ({
+      '日期': item.date || '-',
+      '监控数': item.amount || 0
+    }))
+
+    // 5. 准备预约趋势数据
+    const bookingTrendData = bookingTrend.value.map(item => ({
+      '日期': item.date || '-',
+      '预约数': item.amount || 0
+    }))
+
+    // 6. 准备培训趋势数据
+    const trainTrendData = trainTrend.value.map(item => ({
+      '日期': item.date || '-',
+      '培训数': item.amount || 0
+    }))
+
+    // 7. 定义列配置
+    const summaryColumns = [
+      { prop: '统计项目', label: '统计项目', width: 15 },
+      { prop: '总计', label: '总计', width: 12 },
+      { prop: '内部', label: '内部', width: 12 },
+      { prop: '外部', label: '外部', width: 12 }
+    ]
+
+    const userTypeColumns = [
+      { prop: '用户类型', label: '用户类型', width: 20 },
+      { prop: '数量', label: '数量', width: 12 }
+    ]
+
+    const trendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '数量', label: '数量', width: 12 }
+    ]
+
+    const dailyTrendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '活跃用户数', label: '活跃用户数', width: 15 }
+    ]
+
+    const monitorTrendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '监控数', label: '监控数', width: 12 }
+    ]
+
+    const bookingTrendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '预约数', label: '预约数', width: 12 }
+    ]
+
+    const trainTrendColumns = [
+      { prop: '日期', label: '日期', width: 15 },
+      { prop: '培训数', label: '培训数', width: 12 }
+    ]
+
+    // 8. 生成文件名
+    let filename = '用户运营统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 9. 构建 Sheet 数组
+    const sheets = [
+      {
+        name: '统计汇总',
+        data: summaryData,
+        columns: summaryColumns
+      }
+    ]
+
+    // 只有有数据时才添加对应的 Sheet
+    if (userTypeData.length > 0) {
+      sheets.push({
+        name: '用户类型分布',
+        data: userTypeData,
+        columns: userTypeColumns
+      })
+    }
+
+    if (dailyTrendData.length > 0) {
+      sheets.push({
+        name: '日活走势',
+        data: dailyTrendData,
+        columns: dailyTrendColumns
+      })
+    }
+
+    if (monitorTrendData.length > 0) {
+      sheets.push({
+        name: '监控趋势',
+        data: monitorTrendData,
+        columns: monitorTrendColumns
+      })
+    }
+
+    if (bookingTrendData.length > 0) {
+      sheets.push({
+        name: '预约趋势',
+        data: bookingTrendData,
+        columns: bookingTrendColumns
+      })
+    }
+
+    if (trainTrendData.length > 0) {
+      sheets.push({
+        name: '培训趋势',
+        data: trainTrendData,
+        columns: trainTrendColumns
+      })
+    }
+
+    // 10. 调用多Sheet导出函数
+    exportMultiSheet(sheets, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 // 初始化

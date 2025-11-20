@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>培训运营</span>
-          <el-button type="primary" plain>导出报表</el-button>
+          <el-button type="primary" plain @click="exportData">导出报表</el-button>
         </div>
       </template>
       
@@ -177,6 +177,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Reading, User, Trophy } from '@element-plus/icons-vue'
 import { getTotalTraining } from '@/api/trainingOperation'
 import { ElMessage } from 'element-plus'
+import { exportMultiSheet } from '@/utils/export'
 
 const loading = ref(false)
 const queryType = ref(0) // 0:实时, 1:按时段
@@ -285,6 +286,76 @@ const getUsagePercentage = (item, rankingList) => {
 const getProgressColor = (index) => {
   const colors = ['#409EFF', '#67C23A', '#E6A23C', '#909399', '#C0C4CC']
   return colors[index] || colors[colors.length - 1]
+}
+
+// 导出数据
+const exportData = () => {
+  if (!trainingCount.value && !trainingPeopleCount.value && !trainingPassRate.value) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 统计汇总数据
+    const summaryData = [
+      { '统计项目': '培训场数', '数值': trainingCount.value || 0 },
+      { '统计项目': '培训人数', '数值': trainingPeopleCount.value || 0 },
+      { '统计项目': '培训通过率(%)', '数值': trainingPassRate.value || 0 }
+    ]
+
+    // 2. 仪器培训排名数据
+    const equipmentData = equipmentTrainingRanking.value.map((item, index) => ({
+      '排名': index + 1,
+      '仪器名称': item.name || '未知仪器',
+      '培训量': item.amount || 0,
+      '培训人数': item.users || 0
+    }))
+
+    // 3. 列配置
+    const summaryColumns = [
+      { prop: '统计项目', label: '统计项目', width: 20 },
+      { prop: '数值', label: '数值', width: 15 }
+    ]
+
+    const equipmentColumns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '仪器名称', label: '仪器名称', width: 40 },
+      { prop: '培训量', label: '培训量', width: 15 },
+      { prop: '培训人数', label: '培训人数', width: 15 }
+    ]
+
+    // 4. 生成文件名
+    let filename = '培训运营统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value?.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 5. 构建Sheet数组
+    const sheets = [
+      {
+        name: '统计汇总',
+        data: summaryData,
+        columns: summaryColumns
+      }
+    ]
+
+    if (equipmentData.length > 0) {
+      sheets.push({
+        name: '仪器培训排名',
+        data: equipmentData,
+        columns: equipmentColumns
+      })
+    }
+
+    // 6. 导出
+    exportMultiSheet(sheets, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 // 初始化

@@ -88,8 +88,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getAlarmData } from '@/api/usage'
+import { exportToExcel } from '@/utils/export'
 
 // 查询表单
 const queryForm = reactive({
@@ -103,6 +104,7 @@ const queryForm = reactive({
 
 // 表格数据
 const tableData = ref([])
+const allData = ref([]) // 存储所有查询到的数据
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -142,12 +144,18 @@ const handleQuery = async () => {
 
     const response = await getAlarmData(params)
     if (response.code === '00000') {
-      const allData = response.data || []
-      const filteredData = allData.filter(item => item.type === 7)
+      const responseData = response.data || []
+      const filteredData = responseData.filter(item => item.type === 7)
+      
+      // 存储所有数据用于导出
+      allData.value = filteredData
+      
+      // 手动分页
       total.value = filteredData.length
       const start = (currentPage.value - 1) * pageSize.value
       const end = start + pageSize.value
       tableData.value = filteredData.slice(start, end)
+      
       ElMessage.success('查询成功')
     } else {
       ElMessage.error(response.msg || '查询失败')
@@ -172,39 +180,48 @@ const handleReset = () => {
 
 // 导出数据
 const handleExport = () => {
-  ElMessageBox.confirm('确认导出当前查询结果吗？', '导出确认', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'info'
-  }).then(() => {
-    // 模拟导出功能
-    const exportData = tableData.value.map(item => ({
-      '报警名称': item.name,
-      '位置': item.location,
-      '报警ID': item.id,
-      '时间': item.time,
-      '报警类型': item.type === 7 ? '劣迹用户报警' : '劣迹用户报警',
-      '详情': item.value
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据（导出所有数据，不仅仅是当前页）
+    const exportData = allData.value.map(item => ({
+      '报警名称': item.name || '-',
+      '位置': item.location || '-',
+      '报警ID': item.id || '-',
+      '时间': item.time || '-',
+      '报警类型': '劣迹用户报警',
+      '详情': item.value || '-'
     }))
 
-    // 创建CSV内容
-    const headers = Object.keys(exportData[0] || {})
-    const csvContent = [
-      headers.join(','),
-      ...exportData.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
-    ].join('\n')
+    // 2. 定义列配置
+    const columns = [
+      { prop: '报警名称', label: '报警名称', width: 25 },
+      { prop: '位置', label: '位置', width: 20 },
+      { prop: '报警ID', label: '报警ID', width: 15 },
+      { prop: '时间', label: '时间', width: 20 },
+      { prop: '报警类型', label: '报警类型', width: 15 },
+      { prop: '详情', label: '详情', width: 30 }
+    ]
 
-    // 创建下载链接
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `劣迹用户报警统计_${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
+    // 3. 生成文件名
+    let filename = '劣迹用户报警统计'
+    if (queryForm.queryType === 0) {
+      filename += '_实时'
+    } else if (queryForm.queryType === 1 && queryForm.startDate && queryForm.endDate) {
+      filename += `_${queryForm.startDate}至${queryForm.endDate}`
+    }
 
+    // 4. 调用导出函数
+    exportToExcel(exportData, columns, filename)
     ElMessage.success('导出成功')
-  }).catch(() => {
-    // 取消导出
-  })
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 // 分页大小变化

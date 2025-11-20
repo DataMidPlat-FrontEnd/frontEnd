@@ -122,6 +122,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { getEquipmentUsage } from '@/api/usage'
 import { ElMessage } from 'element-plus'
+import { exportToExcel } from '@/utils/export'
 
 const loading = ref(false)
 
@@ -247,7 +248,57 @@ const fmtPercent = (_, __, cell) => cell.toFixed(2)
 const fmtMoney = (_, __, cell) => cell.toFixed(2)
 
 const exportData = () => {
-  ElMessage.info('导出功能待接入')
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 定义导出列配置
+    const columns = [
+      { prop: 'name', label: '仪器名称', width: 30 },
+      { prop: 'code', label: '资产编号', width: 18 },
+      { prop: 'platform', label: '所属平台', width: 25 },
+      { prop: 'location', label: '位置', width: 25 },
+      { prop: 'usage', label: '使用率(%)', width: 15 },
+      { prop: 'tTime', label: '总机时(h)', width: 15 },
+      { prop: 'iTime', label: '内部机时(h)', width: 18 },
+      { prop: 'oTime', label: '外部机时(h)', width: 18 },
+      { prop: 'sample', label: '样品数', width: 12 },
+      { prop: 'materials', label: '耗材数', width: 12 },
+      { prop: 'tAmount', label: '总次数', width: 12 },
+      { prop: 'iAmount', label: '内部次数', width: 15 },
+      { prop: 'oAmount', label: '外部次数', width: 15 },
+      { prop: 'tUser', label: '总人数', width: 12 },
+      { prop: 'iUser', label: '内部人数', width: 15 },
+      { prop: 'oUser', label: '外部人数', width: 15 },
+      { prop: 'tGroup', label: '总课题组', width: 15 },
+      { prop: 'iGroup', label: '内部课题组', width: 18 },
+      { prop: 'oGroup', label: '外部课题组', width: 18 },
+      { prop: 'tCard', label: '总经费卡', width: 15 },
+      { prop: 'iCard', label: '内部经费卡', width: 18 },
+      { prop: 'oCard', label: '外部经费卡', width: 18 },
+      { prop: 'tIncome', label: '总收入(元)', width: 15 },
+      { prop: 'iIncome', label: '内部收入(元)', width: 18 },
+      { prop: 'oIncome', label: '外部收入(元)', width: 18 }
+    ]
+
+    // 生成文件名（包含查询条件）
+    let filename = '仪器使用统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 导出数据（导出所有数据，不仅仅是当前页）
+    exportToExcel(allData.value, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 /* 监听查询类型变化 - 只在实时模式下自动查询 */

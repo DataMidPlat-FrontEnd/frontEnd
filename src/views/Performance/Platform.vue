@@ -97,6 +97,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { getPlatformStatistics } from '@/api/usage'
 import { ElMessage } from 'element-plus'
+import { exportToExcel } from '@/utils/export'
 
 const loading = ref(false)
 
@@ -200,8 +201,62 @@ const fmtNum = (_, __, cell) => cell.toFixed(2)
 const fmtInt = (_, __, cell) => cell
 const fmtPercent = (_, __, cell) => cell.toFixed(2)
 
+/* 导出数据 */
 const exportData = () => {
-  ElMessage.info('导出功能待接入')
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据（导出所有数据，不仅仅是当前页）
+    const exportDataList = allData.value.map((item, index) => ({
+      '排名': index + 1,
+      '平台名称': item.platform || '未知平台',
+      '仪器机时(h)': item.tTime ? item.tTime.toFixed(2) : '0.00',
+      '仪器使用率(%)': item.eqUsage ? item.eqUsage.toFixed(2) : '0.00',
+      '房间使用数': item.rooms || 0,
+      '房间使用率(%)': item.roomUsage ? item.roomUsage.toFixed(2) : '0.00',
+      '项目管理数': item.tProject || 0,
+      '笼位使用数': item.cages || 0,
+      '笼位使用率(%)': item.cageUsage ? item.cageUsage.toFixed(2) : '0.00',
+      '支撑科研项目数': item.tCard || 0,
+      '支撑内部科研项目数': item.iCard || 0,
+      '支撑外部科研项目数': item.oCard || 0
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '平台名称', label: '平台名称', width: 25 },
+      { prop: '仪器机时(h)', label: '仪器机时(h)', width: 18 },
+      { prop: '仪器使用率(%)', label: '仪器使用率(%)', width: 18 },
+      { prop: '房间使用数', label: '房间使用数', width: 15 },
+      { prop: '房间使用率(%)', label: '房间使用率(%)', width: 18 },
+      { prop: '项目管理数', label: '项目管理数', width: 15 },
+      { prop: '笼位使用数', label: '笼位使用数', width: 15 },
+      { prop: '笼位使用率(%)', label: '笼位使用率(%)', width: 18 },
+      { prop: '支撑科研项目数', label: '支撑科研项目数', width: 20 },
+      { prop: '支撑内部科研项目数', label: '支撑内部科研项目数', width: 22 },
+      { prop: '支撑外部科研项目数', label: '支撑外部科研项目数', width: 22 }
+    ]
+
+    // 3. 生成文件名
+    let filename = '平台业绩统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 /* 监听查询类型变化 - 只在实时模式下自动查询 */

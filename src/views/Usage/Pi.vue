@@ -93,6 +93,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { getPiStatistics } from '@/api/usage'
 import { ElMessage } from 'element-plus'
+import { exportToExcel } from '@/utils/export'
 
 const loading = ref(false)
 
@@ -177,8 +178,50 @@ const fmtNum = (_, __, cell) => cell.toFixed(2)
 const fmtInt = (_, __, cell) => cell
 const fmtMoney = (_, __, cell) => cell.toFixed(2)
 
+/* 导出数据 */
 const exportData = () => {
-  ElMessage.info('导出功能待接入')
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据（导出所有数据，不仅仅是当前页）
+    const exportDataList = allData.value.map((item, index) => ({
+      '排名': index + 1,
+      '课题组名称': item.pi || '未知课题组',
+      '使用次数': item.tAmount || 0,
+      '使用时长(h)': item.tTime ? item.tTime.toFixed(2) : '0.00',
+      '项目数': item.tProject || 0,
+      '贡献收入(元)': item.tIncome ? item.tIncome.toFixed(2) : '0.00'
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '课题组名称', label: '课题组名称', width: 25 },
+      { prop: '使用次数', label: '使用次数', width: 15 },
+      { prop: '使用时长(h)', label: '使用时长(h)', width: 18 },
+      { prop: '项目数', label: '项目数', width: 12 },
+      { prop: '贡献收入(元)', label: '贡献收入(元)', width: 18 }
+    ]
+
+    // 3. 生成文件名
+    let filename = '课题组使用统计'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 /* 监听查询类型变化 - 只在实时模式下自动查询 */

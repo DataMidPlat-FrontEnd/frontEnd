@@ -109,6 +109,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { getBuyStatistics } from '@/api/usage'
 import { ElMessage } from 'element-plus'
+import { exportToExcel } from '@/utils/export'
 
 const loading = ref(false)
 
@@ -217,8 +218,64 @@ const fmtInt = (_, __, cell) => cell
 const fmtMoney = (_, __, cell) => cell.toFixed(2)
 const fmtPercent = (_, __, cell) => cell.toFixed(2) + '%'
 
+/* 导出数据 */
 const exportData = () => {
-  ElMessage.info('导出功能待接入')
+  // 验证是否有数据
+  if (!allData.value || allData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据（导出所有数据，不仅仅是当前页）
+    const exportDataList = allData.value.map((item, index) => ({
+      '排名': index + 1,
+      '仪器名称': item.name || '未知仪器',
+      '资产编号': item.code || '-',
+      '所属平台': item.platform || '未知平台',
+      '仪器价值(元)': item.worth ? item.worth.toFixed(2) : '0.00',
+      '配件价值(元)': item.parts ? item.parts.toFixed(2) : '0.00',
+      '共享时长(h)': item.tTime ? item.tTime.toFixed(2) : '0.00',
+      '共享次数': item.tAmount || 0,
+      '共享收入(元)': item.tIncome ? item.tIncome.toFixed(2) : '0.00',
+      '支撑科研项目数': item.tCard || 0,
+      '支撑内部科研项目数': item.iCard || 0,
+      '支撑外部科研项目数': item.oCard || 0,
+      '投入产出比': item.inputOutputRatio ? item.inputOutputRatio.toFixed(2) + '%' : '0.00%'
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '排名', label: '排名', width: 12 },
+      { prop: '仪器名称', label: '仪器名称', width: 30 },
+      { prop: '资产编号', label: '资产编号', width: 18 },
+      { prop: '所属平台', label: '所属平台', width: 30 },
+      { prop: '仪器价值(元)', label: '仪器价值(元)', width: 18 },
+      { prop: '配件价值(元)', label: '配件价值(元)', width: 18 },
+      { prop: '共享时长(h)', label: '共享时长(h)', width: 18 },
+      { prop: '共享次数', label: '共享次数', width: 15 },
+      { prop: '共享收入(元)', label: '共享收入(元)', width: 18 },
+      { prop: '支撑科研项目数', label: '支撑科研项目数', width: 20 },
+      { prop: '支撑内部科研项目数', label: '支撑内部科研项目数', width: 22 },
+      { prop: '支撑外部科研项目数', label: '支撑外部科研项目数', width: 22 },
+      { prop: '投入产出比', label: '投入产出比', width: 15 }
+    ]
+
+    // 3. 生成文件名
+    let filename = '购置投入产出分析'
+    if (queryType.value === 0) {
+      filename += '_实时'
+    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
+      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    }
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 /* 监听查询类型变化 - 只在实时模式下自动查询 */
