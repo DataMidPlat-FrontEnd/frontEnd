@@ -3,13 +3,13 @@
     <el-card class="query-card">
       <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="查询方式">
-          <el-radio-group v-model="queryForm.queryType" @change="handleQueryTypeChange">
+          <el-radio-group v-model="queryForm.queryType" size="small" @change="handleQueryTypeChange">
             <el-radio-button :label="0">实时</el-radio-button>
             <el-radio-button :label="1">按时段</el-radio-button>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="建筑选择">
-          <el-select v-model="queryForm.buildingId" placeholder="请选择建筑" clearable @change="handleBuildingChange">
+          <el-select v-model="queryForm.buildingId" placeholder="请选择建筑" clearable size="small" @change="handleBuildingChange">
             <el-option label="A栋" value="1" />
             <el-option label="B栋" value="2" />
             <el-option label="C栋" value="3" />
@@ -30,6 +30,7 @@
             placeholder="选择开始日期"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
+            size="small"
           />
         </el-form-item>
         <el-form-item label="结束日期" v-if="queryForm.queryType === 1">
@@ -39,12 +40,13 @@
             placeholder="选择结束日期"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
+            size="small"
           />
         </el-form-item>
         
         <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" size="small" @click="handleQuery">查询</el-button>
+          <el-button size="small" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -53,7 +55,6 @@
       <div class="card-header">
         <div class="header-left">
           <h3>建筑统计信息</h3>
-          <el-tag type="info" v-if="selectedBuildingName">{{ selectedBuildingName }}</el-tag>
         </div>
         <div class="header-right" v-if="tableData.length > 0">
           <el-input
@@ -86,6 +87,7 @@
         border
         stripe
         style="width: 100%"
+        height="calc(100vh - 320px)"
         :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
         v-if="tableData.length > 0"
       >
@@ -329,6 +331,31 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+
+.query-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.query-form :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.query-form .el-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.query-form :deep(.el-select) {
+  width: 240px;
 }
 
 .data-card {

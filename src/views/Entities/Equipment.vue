@@ -32,7 +32,7 @@
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item label="仪器ID">
+        <el-form-item label="仪器">
           <div class="equipment-search-wrapper">
             <el-input 
               ref="equipmentSearchInput"
@@ -701,8 +701,8 @@ const updateDropdownPosition = () => {
   
   dropdownStyle.value = {
     position: 'fixed',
-    top: `${rect.bottom + window.scrollY}px`,
-    left: `${rect.left + window.scrollX}px`,
+    top: `${rect.bottom}px`,
+    left: `${rect.left}px`,
     width: `${rect.width}px`,
     zIndex: 999999
   }
@@ -1086,6 +1086,23 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+
+/* 保证查询控件与按钮在同一水平线 */
+.query-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.query-form :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.query-form .el-tag {
+  display: inline-flex;
+  align-items: center;
 }
 
 .data-card {
@@ -1325,15 +1342,10 @@ onMounted(() => {
 }
 
 /* 仪器搜索下拉框样式 */
-.equipment-search-container {
+.equipment-search-wrapper {
   position: relative;
-  display: inline-block;
-  z-index: 999999;
-}
-
-/* 确保搜索容器在最上层 */
-.equipment-search-container {
-  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
 }
 
 .equipment-dropdown {

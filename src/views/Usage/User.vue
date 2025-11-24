@@ -61,7 +61,7 @@
 
       <!-- 表格 + 分页 -->
       <el-card class="table-card" v-if="total > 0">
-        <el-table :data="tableData" border stripe height="540">
+        <el-table :data="tableData" border stripe height="calc(100vh - 320px)">
           <el-table-column prop="name" label="用户名称" min-width="180" />
           <el-table-column prop="pi" label="所属课题组" min-width="200" />
           <el-table-column prop="tAmount" label="使用次数" min-width="120" :formatter="fmtInt" />
@@ -243,7 +243,7 @@ onMounted(() => {
 .usage-user { padding: 16px; }
 .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 600; }
 .filter-section { margin-bottom: 16px; padding: 16px; background-color: #f5f7fa; border-radius: 8px; }
-.filter-form { margin: 0; }
+.filter-form { margin: 0; align-items: center; display: flex; flex-wrap: wrap; }
 .table-card { margin-top: 0; }
 .pagination { margin-top: 12px; text-align: right; }
 .empty-section { padding: 60px 0; text-align: center; }

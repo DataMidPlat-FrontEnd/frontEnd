@@ -82,6 +82,51 @@
           </div>
 >
         </el-card>
+        
+        <el-card class="stat-card" v-if="trainingMaterialsCount !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #f0f8ff;">
+              <el-icon :size="32" color="#1890ff">
+                <Document />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">培训资料数</div>
+              <div class="stat-value">{{ trainingMaterialsCount }}</div>
+            </div>
+          </div>
+>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="onlineTrainingCount !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #e6f7ff;">
+              <el-icon :size="32" color="#1890ff">
+                <Reading />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">线上培训量</div>
+              <div class="stat-value">{{ onlineTrainingCount }}</div>
+            </div>
+          </div>
+>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="offlineTrainingCount !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #fff7e6;">
+              <el-icon :size="32" color="#fa8c16">
+                <Reading />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">线下培训量</div>
+              <div class="stat-value">{{ offlineTrainingCount }}</div>
+            </div>
+          </div>
+>
+        </el-card>
       </div>
 
       <!-- 排名区域 - 平台培训量排名、仪器培训量排名 -->
@@ -174,7 +219,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Reading, User, Trophy } from '@element-plus/icons-vue'
+import { Reading, User, Trophy, Document } from '@element-plus/icons-vue'
 import { getTotalTraining } from '@/api/trainingOperation'
 import { ElMessage } from 'element-plus'
 import { exportMultiSheet } from '@/utils/export'
@@ -187,6 +232,9 @@ const dateRange = ref([])
 const trainingCount = ref(null)
 const trainingPeopleCount = ref(null)
 const trainingPassRate = ref(null)
+const trainingMaterialsCount = ref(null) // 培训资料数 (trainInfo)
+const onlineTrainingCount = ref(null) // 线上培训量 (trainOnline)
+const offlineTrainingCount = ref(null) // 线下培训量 (trainOffline)
 
 // 排名数据
 const platformTrainingRanking = ref([])
@@ -209,7 +257,10 @@ const equipmentTrainingRankingPaged = computed(() => {
 const hasData = computed(() => {
   return trainingCount.value !== null || 
          trainingPeopleCount.value !== null || 
-         trainingPassRate.value !== null
+         trainingPassRate.value !== null ||
+         trainingMaterialsCount.value !== null ||
+         onlineTrainingCount.value !== null ||
+         offlineTrainingCount.value !== null
 })
 
 const hasRankingData = computed(() => {
@@ -247,6 +298,9 @@ const fetchData = async () => {
         trainingCount.value = data?.train ?? null
         trainingPeopleCount.value = data?.trainUser ?? null
         trainingPassRate.value = data?.trainPass ?? null
+        trainingMaterialsCount.value = data?.trainInfo ?? null // 培训资料数
+        onlineTrainingCount.value = data?.trainOnline ?? null // 线上培训量
+        offlineTrainingCount.value = data?.trainOffline ?? null // 线下培训量
         
         platformTrainingRanking.value = data?.platformRanking ?? []
         equipmentTrainingRanking.value = data?.eqRanking ?? []
@@ -290,7 +344,7 @@ const getProgressColor = (index) => {
 
 // 导出数据
 const exportData = () => {
-  if (!trainingCount.value && !trainingPeopleCount.value && !trainingPassRate.value) {
+  if (!trainingCount.value && !trainingPeopleCount.value && !trainingPassRate.value && !trainingMaterialsCount.value && !onlineTrainingCount.value && !offlineTrainingCount.value) {
     ElMessage.warning('暂无数据可导出')
     return
   }
@@ -300,7 +354,10 @@ const exportData = () => {
     const summaryData = [
       { '统计项目': '培训场数', '数值': trainingCount.value || 0 },
       { '统计项目': '培训人数', '数值': trainingPeopleCount.value || 0 },
-      { '统计项目': '培训通过率(%)', '数值': trainingPassRate.value || 0 }
+      { '统计项目': '培训通过率(%)', '数值': trainingPassRate.value || 0 },
+      { '统计项目': '培训资料数', '数值': trainingMaterialsCount.value || 0 },
+      { '统计项目': '线上培训量', '数值': onlineTrainingCount.value || 0 },
+      { '统计项目': '线下培训量', '数值': offlineTrainingCount.value || 0 }
     ]
 
     // 2. 仪器培训排名数据
@@ -397,6 +454,9 @@ onMounted(() => {
 
 .filter-form {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .stats-grid {

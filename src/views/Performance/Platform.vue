@@ -59,7 +59,7 @@
 
       <!-- 表格 + 分页 -->
       <el-card class="table-card" v-if="total > 0">
-        <el-table :data="tableData" border stripe height="540">
+        <el-table :data="tableData" border stripe height="calc(100vh - 320px)">
           <el-table-column prop="platform" label="平台名称" min-width="220" />
           <el-table-column prop="tTime" label="仪器机时(h)" min-width="140" :formatter="fmtNum" />
           <el-table-column prop="eqUsage" label="仪器使用率(%)" min-width="140" :formatter="fmtPercent" />
@@ -298,6 +298,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .table-card {

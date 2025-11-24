@@ -70,7 +70,7 @@
 
       <!-- 表格 + 分页 -->
       <el-card class="table-card" v-if="total > 0">
-        <el-table :data="tableData" border stripe height="540">
+        <el-table :data="tableData" border stripe height="calc(100vh - 320px)">
           <el-table-column prop="name" label="仪器名称" min-width="180" />
           <el-table-column prop="code" label="资产编号" min-width="140" />
           <el-table-column prop="platform" label="所属平台" min-width="200" />
@@ -319,6 +319,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .table-card {
