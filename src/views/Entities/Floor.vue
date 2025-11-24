@@ -4,8 +4,12 @@
       <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="楼层选择">
           <el-select v-model="queryForm.floorId" placeholder="请选择楼层" clearable @change="handleFloorChange">
-            <el-option label="标四B栋2层" value="1" />
-            <el-option label="标四C栋1层" value="2" />
+            <el-option
+              v-for="floor in floorOptions"
+              :key="floor.value"
+              :label="floor.label"
+              :value="floor.value"
+            />
           </el-select>
           <el-tag v-if="selectedFloorName" type="primary" style="margin-left: 10px;">
             {{ selectedFloorName }}
@@ -32,6 +36,7 @@
             clearable
             @input="handleSearch"
           />
+          <el-button type="primary" plain @click="handleExport" style="margin-right: 10px;">导出报表</el-button>
           <el-popover placement="bottom" :width="200" trigger="click">
             <template #reference>
               <el-button>列设置</el-button>
@@ -82,6 +87,8 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getFloorData } from '@/api/entities'
+import { getDetailedList } from '@/api/dashboard'
+import { exportToExcel } from '@/utils/export'
 
 // 查询表单
 const queryForm = reactive({
@@ -107,11 +114,8 @@ const formatNumber = (value) => {
   return Number(value).toLocaleString()
 }
 
-// 楼层选项
-const floorOptions = ref([
-  { label: '标四B栋2层', value: '1' },
-  { label: '标四C栋1层', value: '2' }
-])
+// 楼层选项 - 从接口动态获取
+const floorOptions = ref([])
 
 // 楼层选择变化处理
 const handleFloorChange = () => {
@@ -185,6 +189,50 @@ const handleColumnChange = () => {
   visibleColumns.value = allColumns.value.filter(column => column.visible)
 }
 
+/**
+ * 导出楼层统计数据为 Excel
+ * 包含所有楼层统计信息
+ */
+const handleExport = () => {
+  // 验证是否有数据
+  if (!tableData.value || tableData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据
+    const exportDataList = tableData.value.map((item, index) => ({
+      '序号': index + 1,
+      '楼层名称': item.name || '未知楼层',
+      '楼层用途': item.usage || '-',
+      '面积(m²)': item.area || '0',
+      '平台数量': item.platformCount || 0,
+      '所属平台': item.platformNames || '-'
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '序号', label: '序号', width: 10 },
+      { prop: '楼层名称', label: '楼层名称', width: 25 },
+      { prop: '楼层用途', label: '楼层用途', width: 20 },
+      { prop: '面积(m²)', label: '面积(m²)', width: 15 },
+      { prop: '平台数量', label: '平台数量', width: 15 },
+      { prop: '所属平台', label: '所属平台', width: 40 }
+    ]
+
+    // 3. 生成文件名
+    const filename = `楼层统计_${selectedFloorName.value || '全部'}`
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
+}
+
 // 表格列配置
 const allColumns = ref([
   { prop: 'name', label: '楼层名称', visible: true, minWidth: 150 },
@@ -197,12 +245,36 @@ const allColumns = ref([
 // 计算可见列
 const visibleColumns = ref([])
 
+/**
+ * 从 detailedList 接口获取楼层列表
+ * 该接口返回包含 floor 数组的数据
+ */
+const fetchFloorOptions = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.floor) {
+      // 将接口返回的 floor 数组转换为下拉框选项格式
+      // { name: "楼层名称", id: "楼层ID" } -> { label: "楼层名称", value: "楼层ID" }
+      floorOptions.value = response.data.floor.map(f => ({
+        label: f.name || `楼层 ${f.id}`,
+        value: String(f.id)
+      }))
+    } else {
+      console.warn('获取楼层列表失败或数据格式错误')
+    }
+  } catch (error) {
+    console.error('获取楼层列表失败:', error)
+    ElMessage.error('获取楼层列表失败')
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   // 初始化可见列
   visibleColumns.value = allColumns.value.filter(column => column.visible)
   
-  // 不自动选择楼层，需要用户手动选择
+  // 从接口获取楼层选项
+  fetchFloorOptions()
 })
 </script>
 

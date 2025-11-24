@@ -4,8 +4,12 @@
       <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="楼层选择">
           <el-select v-model="queryForm.floorId" placeholder="请选择楼层" clearable @change="handleFloorChange">
-            <el-option label="标四B栋2层" value="1" />
-            <el-option label="标四C栋1层" value="2" />
+            <el-option
+              v-for="floor in floorOptions"
+              :key="floor.value"
+              :label="floor.label"
+              :value="floor.value"
+            />
           </el-select>
           <el-tag v-if="selectedFloorName" type="primary" style="margin-left: 10px;">
             {{ selectedFloorName }}
@@ -34,6 +38,7 @@
             clearable
             @input="handleListSearch"
           />
+          <el-button type="primary" plain @click="handleExport">导出报表</el-button>
         </div>
       </div>
       
@@ -119,13 +124,6 @@
         <h4>摄像头信息 ({{ roomDetail.camera.length }} 个)</h4>
         <el-table :data="roomDetail.camera" border style="width: 100%">
           <el-table-column prop="name" label="摄像头名称" min-width="200" />
-          <el-table-column label="操作" width="100">
-            <template #default="{ row }">
-              <el-button type="primary" size="small" @click="viewCamera(row)">
-                查看
-              </el-button>
-            </template>
-          </el-table-column>
         </el-table>
       </div>
 
@@ -157,17 +155,21 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getRoomDataByFloor, getRoomData } from '@/api/entities'
+import { getDetailedList } from '@/api/dashboard'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
+import { exportToExcel } from '@/utils/export'
+
+// 获取用户信息
+const userStore = useUserStore()
 
 // 查询表单
 const queryForm = reactive({
   floorId: ''
 })
 
-// 楼层选项
-const floorOptions = ref([
-  { label: '标四B栋2层', value: '1' },
-  { label: '标四C栋1层', value: '2' }
-])
+// 楼层选项 - 从接口动态获取
+const floorOptions = ref([])
 
 // 房间列表
 const roomList = ref([])
@@ -196,6 +198,28 @@ const handleFloorChange = () => {
   roomDetail.value = {}
 }
 
+/**
+ * 根据用户权限过滤房间列表
+ * 全权限用户可以查看所有房间，其他用户只能查看分配给他们的房间
+ */
+const filterRoomsByUserPermission = (rooms) => {
+  // 检查用户是否有全部数据权限
+  const hasFullPermission = hasFullDataPermission(userStore.userRole)
+
+  if (hasFullPermission) {
+    // 全权限用户：返回所有房间
+    return rooms
+  } else {
+    // 其他用户：只返回分配给他们的房间
+    const allowedRoomIds = userStore.roomIds || []
+    // 将房间ID转换为数字进行比较,因为userStore.roomIds中存储的是数字类型
+    return rooms.filter(room => {
+      const roomId = Number(room.id)
+      return allowedRoomIds.includes(roomId)
+    })
+  }
+}
+
 // 查询房间列表
 const handleQuery = async () => {
   if (!queryForm.floorId) {
@@ -212,13 +236,16 @@ const handleQuery = async () => {
     const response = await getRoomDataByFloor(params)
     if (response.code === '00000') {
       if (response.data && response.data.roomList) {
-        roomList.value = response.data.roomList
-        filteredRoomList.value = response.data.roomList
-        
-        if (roomList.value.length === 0) {
-          ElMessage.info('该楼层暂无房间数据')
+        // 根据用户权限过滤房间列表
+        const filteredRooms = filterRoomsByUserPermission(response.data.roomList)
+
+        roomList.value = filteredRooms
+        filteredRoomList.value = filteredRooms
+
+        if (filteredRooms.length === 0) {
+          ElMessage.info('该楼层暂无您有权限访问的房间数据')
         } else {
-          ElMessage.success(`成功获取 ${roomList.value.length} 个房间信息`)
+          ElMessage.success(`成功获取 ${filteredRooms.length} 个房间信息`)
         }
       } else {
         roomList.value = []
@@ -244,6 +271,54 @@ const handleReset = () => {
   selectedRoom.value = null
   roomDetail.value = {}
   listSearchKeyword.value = ''
+}
+
+/**
+ * 导出房间统计数据为 Excel
+ * 包含所有房间统计信息
+ */
+const handleExport = () => {
+  // 验证是否有数据
+  if (!roomList.value || roomList.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据
+    const exportDataList = roomList.value.map((item, index) => ({
+      '序号': index + 1,
+      '房间名称': item.name || '未知房间',
+      '房间用途': item.usage || '-',
+      '面积(m²)': item.area || '0',
+      '所属平台': (item.platform && item.platform.map(p => p.name).join(', ')) || '-',
+      '传感器数': (item.sensor && item.sensor.length) || 0,
+      '摄像头数': (item.camera && item.camera.length) || 0,
+      '报警数': (item.alarm && item.alarm.length) || 0
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '序号', label: '序号', width: 10 },
+      { prop: '房间名称', label: '房间名称', width: 25 },
+      { prop: '房间用途', label: '房间用途', width: 20 },
+      { prop: '面积(m²)', label: '面积(m²)', width: 15 },
+      { prop: '所属平台', label: '所属平台', width: 40 },
+      { prop: '传感器数', label: '传感器数', width: 12 },
+      { prop: '摄像头数', label: '摄像头数', width: 12 },
+      { prop: '报警数', label: '报警数', width: 12 }
+    ]
+
+    // 3. 生成文件名
+    const filename = `房间统计_${selectedFloorName.value || '全部'}`
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
 }
 
 // 搜索房间列表
@@ -292,15 +367,34 @@ const getRoomDetail = async (roomId) => {
   }
 }
 
-// 查看摄像头
-const viewCamera = (camera) => {
-  ElMessage.info(`查看摄像头: ${camera.name}`)
-  // 这里可以添加实际的摄像头查看逻辑
+
+/**
+ * 从 detailedList 接口获取楼层列表
+ * 该接口返回包含 floor 数组的数据
+ */
+const fetchFloorOptions = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.floor) {
+      // 将接口返回的 floor 数组转换为下拉框选项格式
+      // { name: "楼层名称", id: "楼层ID" } -> { label: "楼层名称", value: "楼层ID" }
+      floorOptions.value = response.data.floor.map(f => ({
+        label: f.name || `楼层 ${f.id}`,
+        value: String(f.id)
+      }))
+    } else {
+      console.warn('获取楼层列表失败或数据格式错误')
+    }
+  } catch (error) {
+    console.error('获取楼层列表失败:', error)
+    ElMessage.error('获取楼层列表失败')
+  }
 }
 
 // 组件挂载时初始化
 onMounted(() => {
-  // 不自动选择楼层，需要用户手动选择
+  // 从接口获取楼层选项
+  fetchFloorOptions()
 })
 </script>
 

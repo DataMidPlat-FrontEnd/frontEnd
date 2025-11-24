@@ -10,14 +10,12 @@
         </el-form-item>
         <el-form-item label="建筑选择">
           <el-select v-model="queryForm.buildingId" placeholder="请选择建筑" clearable @change="handleBuildingChange">
-            <el-option label="A栋" value="1" />
-            <el-option label="B栋" value="2" />
-            <el-option label="C栋" value="3" />
-            <el-option label="D栋" value="4" />
-            <el-option label="电镜中心" value="5" />
-            <el-option label="标五" value="6" />
-            <el-option label="鹰仕达1号楼" value="7" />
-            <el-option label="鹰仕达2号楼（含裙楼）" value="8" />
+            <el-option
+              v-for="building in buildingOptions"
+              :key="building.value"
+              :label="building.label"
+              :value="building.value"
+            />
           </el-select>
           <el-tag v-if="selectedBuildingName" type="primary" style="margin-left: 10px;">
             {{ selectedBuildingName }}
@@ -63,6 +61,7 @@
             clearable
             @input="handleSearch"
           />
+          <el-button type="primary" plain @click="handleExport" style="margin-right: 10px;">导出报表</el-button>
           <el-popover placement="bottom" :width="200" trigger="click">
             <template #reference>
               <el-button>列设置</el-button>
@@ -113,6 +112,8 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getBuildingData } from '@/api/entities'
+import { getDetailedList } from '@/api/dashboard'
+import { exportToExcel } from '@/utils/export'
 
 // 查询表单
 const queryForm = reactive({
@@ -178,17 +179,8 @@ const allColumns = ref([
 // 计算可见列
 const visibleColumns = ref([])
 
-// 建筑选项
-const buildingOptions = ref([
-  { label: 'A栋', value: '1' },
-  { label: 'B栋', value: '2' },
-  { label: 'C栋', value: '3' },
-  { label: 'D栋', value: '4' },
-  { label: '电镜中心', value: '5' },
-  { label: '标五', value: '6' },
-  { label: '鹰仕达1号楼', value: '7' },
-  { label: '鹰仕达2号楼（含裙楼）', value: '8' }
-])
+// 建筑选项 - 从接口动态获取
+const buildingOptions = ref([])
 
 // 查询类型变化处理
 const handleQueryTypeChange = () => {
@@ -303,12 +295,96 @@ const handleColumnChange = () => {
   visibleColumns.value = allColumns.value.filter(column => column.visible)
 }
 
+/**
+ * 导出建筑统计数据为 Excel
+ * 包含所有建筑统计信息
+ */
+const handleExport = () => {
+  // 验证是否有数据
+  if (!tableData.value || tableData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据
+    const exportDataList = tableData.value.map((item, index) => ({
+      '序号': index + 1,
+      '建筑名称': item.name || '未知建筑',
+      '建筑用途': item.usage || '-',
+      '所属平台': item.platform || '-',
+      '楼层数': item.floor || 0,
+      '用户数': item.tUser || 0,
+      '培训人数': item.trainUser || 0,
+      '内部课题组': item.iGroup || 0,
+      '外部课题组': item.oGroup || 0,
+      '仪器使用次数': item.insUse || 0,
+      '总收入(万元)': item.tIncome || '0.00',
+      '内部收入(万元)': item.iIncome || '0.00',
+      '外部收入(万元)': item.oIncome || '0.00',
+      '培训通过率(%)': item.trainPass || '0.00'
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '序号', label: '序号', width: 10 },
+      { prop: '建筑名称', label: '建筑名称', width: 20 },
+      { prop: '建筑用途', label: '建筑用途', width: 15 },
+      { prop: '所属平台', label: '所属平台', width: 20 },
+      { prop: '楼层数', label: '楼层数', width: 12 },
+      { prop: '用户数', label: '用户数', width: 12 },
+      { prop: '培训人数', label: '培训人数', width: 12 },
+      { prop: '内部课题组', label: '内部课题组', width: 15 },
+      { prop: '外部课题组', label: '外部课题组', width: 15 },
+      { prop: '仪器使用次数', label: '仪器使用次数', width: 15 },
+      { prop: '总收入(万元)', label: '总收入(万元)', width: 15 },
+      { prop: '内部收入(万元)', label: '内部收入(万元)', width: 18 },
+      { prop: '外部收入(万元)', label: '外部收入(万元)', width: 18 },
+      { prop: '培训通过率(%)', label: '培训通过率(%)', width: 15 }
+    ]
+
+    // 3. 生成文件名
+    const filename = `建筑统计_${selectedBuildingName.value || '全部'}`
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
+}
+
+/**
+ * 从 detailedList 接口获取建筑列表
+ * 该接口返回包含 building 数组的数据
+ */
+const fetchBuildingOptions = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.building) {
+      // 将接口返回的 building 数组转换为下拉框选项格式
+      // { name: "建筑名称", id: "建筑ID" } -> { label: "建筑名称", value: "建筑ID" }
+      buildingOptions.value = response.data.building.map(b => ({
+        label: b.name || `建筑 ${b.id}`,
+        value: String(b.id)
+      }))
+    } else {
+      console.warn('获取建筑列表失败或数据格式错误')
+    }
+  } catch (error) {
+    console.error('获取建筑列表失败:', error)
+    ElMessage.error('获取建筑列表失败')
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   // 初始化可见列
   visibleColumns.value = allColumns.value.filter(column => column.visible)
   
-  // 不自动选择建筑，需要用户手动选择
+  // 从接口获取建筑选项
+  fetchBuildingOptions()
 })
 </script>
 

@@ -1,27 +1,5 @@
 <template>
   <div class="equipment-page">
-    <!-- 仪器搜索下拉框 - 使用teleport渲染到body -->
-    <teleport to="body" v-if="showEquipmentDropdown">
-      <div 
-        class="equipment-dropdown equipment-dropdown-teleported" 
-        :style="dropdownStyle"
-        @mousedown.prevent
-      >
-        <div 
-          v-for="equipment in filteredEquipmentOptions" 
-          :key="equipment.value"
-          class="equipment-dropdown-item"
-          @mousedown="selectEquipment(equipment)"
-        >
-          <div class="equipment-name">{{ equipment.label }}</div>
-          <div class="equipment-id">ID: {{ equipment.value }}</div>
-        </div>
-        <div v-if="filteredEquipmentOptions.length === 0" class="equipment-dropdown-empty">
-          未找到匹配的仪器
-        </div>
-      </div>
-    </teleport>
-    
     <!-- 仪器基本信息查询 -->
     <el-card class="query-card">
       <el-form :inline="true" :model="queryForm" class="query-form">
@@ -32,22 +10,25 @@
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item label="仪器ID">
-          <div class="equipment-search-wrapper">
-            <el-input 
-              ref="equipmentSearchInput"
-              v-model="equipmentSearchKeyword" 
-              placeholder="请输入仪器名称或ID搜索" 
-              clearable 
-              @input="filterEquipmentOptions"
-              @focus="handleEquipmentSearchFocus"
-              @blur="hideDropdown"
-              style="width: 300px;"
-            />
-            <el-tag v-if="queryForm.equipmentId" type="primary" style="margin-left: 10px;">
-              ID: {{ queryForm.equipmentId }}
-            </el-tag>
-          </div>
+        <el-form-item label="选择仪器">
+          <el-select
+            v-model="queryForm.equipmentId"
+            placeholder="请选择仪器"
+            clearable
+            filterable
+            style="width: 400px;"
+            @change="handleEquipmentChange"
+          >
+            <el-option
+              v-for="equipment in equipmentOptions"
+              :key="equipment.value"
+              :label="equipment.label"
+              :value="equipment.value"
+            >
+              <span style="float: left">{{ equipment.label }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px">ID: {{ equipment.value }}</span>
+            </el-option>
+          </el-select>
         </el-form-item>
         
         <el-form-item label="开始日期" v-if="queryForm.queryType === 1">
@@ -124,11 +105,6 @@
             <el-card shadow="hover" class="training-card">
               <div class="training-title">{{ plan.title }}</div>
               <div class="training-time">时间：{{ plan.time }}</div>
-              <div class="training-actions">
-                <el-button type="primary" size="small" @click="viewTraining(plan.url)">
-                  查看详情
-                </el-button>
-              </div>
             </el-card>
           </el-col>
         </el-row>
@@ -274,6 +250,7 @@
                 clearable
                 @input="handleUsageSearch"
               />
+              <el-button type="primary" plain size="small" @click="handleExport" style="margin-right: 10px;">导出报表</el-button>
               <el-popover placement="bottom" :width="200" trigger="click">
                 <template #reference>
                   <el-button size="small">列设置</el-button>
@@ -350,6 +327,13 @@
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getEqData, getBookingData } from '@/api/entities'
+import { getDetailedList } from '@/api/dashboard'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
+import { exportToExcel } from '@/utils/export'
+
+// 获取用户信息
+const userStore = useUserStore()
 
 // 查询表单
 const queryForm = reactive({
@@ -358,13 +342,6 @@ const queryForm = reactive({
   startDate: '',
   endDate: ''
 })
-
-// 仪器搜索相关
-const equipmentSearchKeyword = ref('')
-const filteredEquipmentOptions = ref([])
-const showEquipmentDropdown = ref(false)
-const equipmentSearchInput = ref(null)
-const dropdownStyle = ref({})
 
 // 仪器基本信息
 const basicData = ref(null)
@@ -385,284 +362,8 @@ const usageQueryForm = reactive({
   endDate: ''
 })
 
-// 仪器选项 - 根据提供的ID和名称数据
-const equipmentOptions = ref([
-  { label: '(ZEISS LSM880 NLO with Airyscan)双光子激光共聚焦扫描显微镜', value: '1' },
-  { label: '(Luxendo GmbH TruLive3D imager)倒置高通量活细胞光片显微成像系统', value: '2' },
-  { label: '(ZEISS LSM 900)激光共聚焦显微镜+搭配活细胞工作站', value: '4' },
-  { label: '(ZEISS LSM 800)激光共聚焦显微镜', value: '5' },
-  { label: '(ZEISS Axio Observer 7)全自动倒置荧光显微镜', value: '7' },
-  { label: '(ZEISS Axio Zoom V16)宏观变倍荧光显微镜', value: '8' },
-  { label: '(ZEISS Axio Imager.A2)正置荧光显微镜', value: '9' },
-  { label: '单细胞蛋白质表达定量分析系统（milo）', value: '10' },
-  { label: '蛋白免疫印迹系统', value: '11' },
-  { label: '全自动智能蛋白液相色谱系统（AKTA Avant 25）', value: '12' },
-  { label: '等温滴定微量热仪', value: '13' },
-  { label: '气相色谱-质谱联用仪（8890-5977B）', value: '14' },
-  { label: '非接触式全自动超声波细胞破碎仪（Bioruptor PICO）', value: '17' },
-  { label: '离心浓缩系统（SPD2030）', value: '18' },
-  { label: '超速离心机（Optima XPN-100）1', value: '19' },
-  { label: '立式高速冷冻离心机（Avanti JXN-26）', value: '20' },
-  { label: '液相色谱-四极杆飞行时间质谱联用仪（1290InfinityII-6546）', value: '21' },
-  { label: '液相色谱-三重四极杆质谱联用仪（1290InfinityII-6495B）', value: '22' },
-  { label: '超速离心机（Optima XPN-100）2', value: '26' },
-  { label: '三合一超高分辨率液质联用仪（Orbitrap Eclipse）', value: '27' },
-  { label: '微量热泳动仪', value: '29' },
-  { label: '分子筛层析和场流分离与多角度光散射联用系统（DAWN+ECLIPSE）', value: '30' },
-  { label: '多功能酶标仪（BioTek SYNERGY NEO2）', value: '31' },
-  { label: '落地式高速冷冻离心机（Avanti J-E）3', value: '32' },
-  { label: '荧光定量PCR仪（CFX96）-1', value: '33' },
-  { label: '荧光定量PCR仪（CFX96）-2', value: '34' },
-  { label: '落地式高速冷冻离心机（Avanti J-E）1', value: '35' },
-  { label: '高级荧光定量PCR仪（QuantStudio 6 FLEX）', value: '36' },
-  { label: '【莱迪】分选型流式细胞仪（BD FACSAria III）', value: '37' },
-  { label: '【莱迪】高端流式细胞分析仪（BD LSRFortessa X-20）', value: '38' },
-  { label: '流式分析仪（Beckman CytoFLEX S）', value: '39' },
-  { label: '落地式高速冷冻离心机（Avanti J-E）2', value: '40' },
-  { label: '600MHz 核磁共振波谱仪', value: '41' },
-  { label: '细胞能量代谢仪（Seahorse XFe96）', value: '45' },
-  { label: '数字PCR系统（QX200）', value: '46' },
-  { label: '单细胞建库测序制备系统', value: '48' },
-  { label: '超声波细胞破碎仪（S220）', value: '49' },
-  { label: '高通量荧光定量PCR系统（CFX384）-1', value: '50' },
-  { label: '全能型成像分析系统（FluorChem E）', value: '52' },
-  { label: '冷冻干燥系统（700611140）', value: '53' },
-  { label: '酶标仪（MultiskanSKY）', value: '54' },
-  { label: '自动化样品破碎仪（TissulyserⅡ）', value: '55' },
-  { label: '低温超高压细胞破碎仪 （JN-MiniPro）1', value: '56' },
-  { label: '（Andor Dragonfly 200）转盘激光共聚焦显微镜', value: '59' },
-  { label: 'PE高内涵成像系统', value: '60' },
-  { label: 'Echo 650声波微量移液系统', value: '61' },
-  { label: '（Carl Zeiss Axio Imager.Z2）全自动正置荧光显微镜', value: '62' },
-  { label: '（Leica M205 FA）体视荧光显微镜', value: '63' },
-  { label: '流式细胞仪（Accuri C6 Plus）', value: '64' },
-  { label: '高端分选型流式细胞仪（BD FACSAria Fusion）', value: '65' },
-  { label: '多光谱激光成像仪（Sapphire RGBNIR）', value: '66' },
-  { label: '显微操作系统-1', value: '67' },
-  { label: '显微操作系统-2', value: '68' },
-  { label: '【莱迪】荧光定量PCR仪（QuantStudio 3）-2', value: '70' },
-  { label: '全能型成像仪', value: '71' },
-  { label: '【莱迪】显微激光切割系统-1（MMI CellCut plus）', value: '73' },
-  { label: '激光切割机（MMI Cellcut plus）', value: '74' },
-  { label: '【莱迪】荧光定量PCR仪（QuantStudio 3）-1', value: '75' },
-  { label: '高级荧光定量PCR仪罗氏LC480', value: '76' },
-  { label: '高级荧光定量PCR仪（QuantStudio™ 7 Flex）', value: '77' },
-  { label: '多模式读板仪（PE Envision）', value: '78' },
-  { label: '冰冻切片机-2', value: '80' },
-  { label: 'DNA剪切仪（LE220）', value: '81' },
-  { label: '生物芯片分析系统（Agilent 4200 TapeStation）', value: '82' },
-  { label: '测试仪器', value: '84' },
-  { label: '高通量超高效液相色谱（UPLC）-高分辨飞行时间质谱（QTof）联用仪', value: '86' },
-  { label: '高通量超高效液质联用仪-UPLC', value: '87' },
-  { label: '质谱引导的自动纯化仪AutoP （开放实验室）', value: '88' },
-  { label: '合相色谱质谱联用仪-UPCC', value: '89' },
-  { label: '高通量自动化微量加样工作站（Beckman Biomek4000）', value: '92' },
-  { label: '氮吹仪', value: '94' },
-  { label: 'Incucyte S3活细胞成像仪', value: '107' },
-  { label: '多孔微电极阵列系统（Axion，BioSystems Maestro Pro）', value: '108' },
-  { label: '细胞成像多功能微孔板检测系统（Biotek Cytation1）', value: '110' },
-  { label: '分选型流式细胞仪（Sony LE-MA900FP）', value: '112' },
-  { label: '流式细胞分析仪（Agilent Novocyte Advanteon）-1', value: '114' },
-  { label: '全自动密度梯度分离系统（108+152）1', value: '115' },
-  { label: '全自动化学发光图像分析系统（iBright FL1500）', value: '116' },
-  { label: '（LEICA Aperio Versa 8）病理切片扫描系统', value: '117' },
-  { label: '（ZEISS Metafer）染色体核型检测系统', value: '119' },
-  { label: '低温超高压细胞破碎仪（JN-MiniPro）2', value: '121' },
-  { label: '（奥林巴斯 IXplore SpinSR ）活细胞超高分辨率转盘共聚焦成像系统', value: '122' },
-  { label: '（NIKON A1）激光共聚焦显微镜', value: '123' },
-  { label: '（Carl Zeiss LSM 980 NLO）双光子共聚焦显微镜', value: '124' },
-  { label: '（Carl Zeiss LSM 980）激光共聚焦显微镜', value: '125' },
-  { label: '（Carl Zeiss Elyra 7）结构光超分辨成像系统', value: '126' },
-  { label: '（Carl Zeiss Axio Zoom V16）体视荧光显微镜', value: '129' },
-  { label: '测试仪器2', value: '131' },
-  { label: '全自动组织处理机（gentleMACS Octo）', value: '132' },
-  { label: '非接触式全自动超声波细胞破碎仪（Bioruptor PICO）2', value: '133' },
-  { label: '全自动密度梯度分离系统（108+152）2', value: '134' },
-  { label: 'PCR仪（赛默飞ProFlex ）', value: '137' },
-  { label: '梯度PCR仪（赛默飞 Veriti）', value: '138' },
-  { label: '荧光光谱仪', value: '139' },
-  { label: '紫外分光光度计', value: '140' },
-  { label: '旋光仪', value: '141' },
-  { label: '自动过柱机CombiFlash1（通风橱内）', value: '142' },
-  { label: '自动过柱机CombiFlash 2（桌面通风罩内）', value: '143' },
-  { label: '微波合成仪Monowave 450', value: '144' },
-  { label: '流式细胞分析仪（Agilent Novocyte Advanteon）-2', value: '146' },
-  { label: '低温超高压细胞破碎仪（JN-MiniPro）3', value: '147' },
-  { label: '化学发光成像系统（6200Touch）', value: '148' },
-  { label: '制备超临界流体色谱SFC-150 AP', value: '156' },
-  { label: '超声波破碎仪（S220）', value: '158' },
-  { label: '单细胞多组学分析系统', value: '159' },
-  { label: '落地式高速离心机（Sorvall LYNX6000）1', value: '160' },
-  { label: '落地式高速离心机（Sorvall LYNX6000）2', value: '161' },
-  { label: '超速离心机（Sorvall WX100+） 1', value: '162' },
-  { label: '超速离心机（Sorvall WX100+） 2', value: '163' },
-  { label: '工作站-倒置高通量活细胞光片显微成像系统', value: '165' },
-  { label: 'PE高内涵数据处理工作站', value: '166' },
-  { label: '莱迪园区（Olympus FV3000）激光共聚焦显微镜', value: '167' },
-  { label: '高通量自动化微量加样工作站（Beckman Biomek4000）', value: '169' },
-  { label: '蛋白纯化液相色谱（多波长 AKTA Pure）', value: '173' },
-  { label: '落地式高速冷冻离心机 (Avanti J-E) 4', value: '174' },
-  { label: '全能型成像分析系统 （FluorChem E）', value: '175' },
-  { label: '飞纳场发射扫描电镜', value: '177' },
-  { label: '蛋白纯化液相色谱（单波长 AKTA Pure）', value: '178' },
-  { label: '离子淌度高分辨率液质联用仪（timsTOF Pro）', value: '179' },
-  { label: 'vitrobot 冷冻制样机', value: '181' },
-  { label: 'Nanopore三代测序仪（Oxford Nanopore，GridION MK1）', value: '182' },
-  { label: '碳/金属溅射发射仪EMS', value: '183' },
-  { label: '单细胞建库测序制备系统', value: '184' },
-  { label: '正置多通道膜片钳系统（Axon，MultiClamp 700B）', value: '187' },
-  { label: '莱迪118门禁', value: '188' },
-  { label: '质谱引导的自动纯化仪AutoP （408）', value: '189' },
-  { label: '莱迪入口门禁', value: '190' },
-  { label: '等温滴定微量热仪（生物岛）', value: '191' },
-  { label: '莱迪一楼纯水仪', value: '192' },
-  { label: '健康院F栋1楼入口门禁', value: '193' },
-  { label: '分子相互作用仪 Biacore 8K+', value: '194' },
-  { label: '健康院F栋127门禁', value: '195' },
-  { label: '核酸蛋白测定仪 （D30）', value: '196' },
-  { label: '多层生化培养系统 （Multiron Standard）', value: '197' },
-  { label: '300 kV冷冻透射电镜 （健康院）Titan Krios G4', value: '198' },
-  { label: '标四B栋2006门禁', value: '200' },
-  { label: '动物中心1楼灭菌间', value: '203' },
-  { label: '标四B栋1008门禁', value: '204' },
-  { label: '分选型流式细胞仪（BD FACSAria III）', value: '205' },
-  { label: '冷冻真空离心浓缩仪 （CV600）', value: '206' },
-  { label: '激光拉针仪（P-2000/F）', value: '207' },
-  { label: '高速冷冻台式离心机（5810R）', value: '208' },
-  { label: '冻干机 （LYOQUEST-85）', value: '209' },
-  { label: 'P2生物安全柜左（1）', value: '210' },
-  { label: 'P2生物安全柜右（2）', value: '211' },
-  { label: 'D4008(BSL-2)', value: '212' },
-  { label: '高通量实时荧光定量PCR仪（CFX384）-2', value: '213' },
-  { label: '智能细胞制备系统（华仪宁创 Cell+100）', value: '214' },
-  { label: '细胞三维牵张拉伸加载培养与分析系统（FLEXCELL FX-6000TFL）', value: '215' },
-  { label: '多层培养箱 （BioStream B7）', value: '216' },
-  { label: '冰冻切片机/冰冻切片', value: '217' },
-  { label: '全自动组织脱水机/脱水服务', value: '218' },
-  { label: '细胞能量代谢仪（Seahorse XFe24）', value: '219' },
-  { label: '全自动器皿清洗机-1', value: '220' },
-  { label: '全自动器皿清洗机-2', value: '221' },
-  { label: '纳米粒度及Zeta电位分析仪', value: '223' },
-  { label: '流变仪', value: '224' },
-  { label: '全自动轮转式切片机/切片服务', value: '225' },
-  { label: '数字病理扫描系统/白光扫描，病理评分，病理描述，诊断', value: '226' },
-  { label: '小动物MICRO-CT', value: '227' },
-  { label: '小动物高分辨率光学相干断层扫描仪（MICRO-OCT）', value: '228' },
-  { label: '全自动染色封片工作站/HE染色', value: '229' },
-  { label: '组织包埋机/包埋服务', value: '230' },
-  { label: '烘片机', value: '231' },
-  { label: '摊片机', value: '232' },
-  { label: '麻醉机', value: '233' },
-  { label: '麻醉呼吸机', value: '234' },
-  { label: '微纳流控子平台临时门禁', value: '235' },
-  { label: '纳米颗粒跟踪分析仪', value: '236' },
-  { label: '实时荧光定量PCR仪（QuantStudio Dx）-1（96孔）', value: '237' },
-  { label: '实时荧光定量PCR仪（Thermo Q 3）(生物岛)', value: '238' },
-  { label: '多功能酶标仪（SpectraMax® Paradigm）', value: '239' },
-  { label: '多功能激光扫描成像系统', value: '242' },
-  { label: '超高参数全光谱流式细胞分析仪（SONY ID7000）', value: '243' },
-  { label: '生物分子相互作用分析系统（Octet R8）', value: '244' },
-  { label: '蛋白结晶自动化工作站', value: '245' },
-  { label: '多功能微孔板检测仪（Agilent SH 1MF）', value: '246' },
-  { label: '分析型超速离心机（AUC）', value: '247' },
-  { label: '全自动单细胞分选仪（cellenone）', value: '248' },
-  { label: '十万级天平', value: '249' },
-  { label: '流式分析软件工作站', value: '250' },
-  { label: '静电场轨道阱超高分辨率液质联用仪 (Orbitrap Exploris 480)', value: '251' },
-  { label: 'PCR仪（BioRad，T100）', value: '252' },
-  { label: '台式超速离心机（Optima MAX-XP）', value: '253' },
-  { label: '高通量测序仪（华大智造，MGISEQ-2000）-A槽', value: '254' },
-  { label: '高通量测序仪（赛陆医疗，Salus Pro）-A 槽', value: '255' },
-  { label: '正置电生理及成像系统（HEAK，EPC-10）', value: '256' },
-  { label: '倒置电生理及成像系统（HEAK，EPC-10）', value: '257' },
-  { label: '抛光仪（Narishige，MF-2）（膜片钳系统配套）', value: '258' },
-  { label: '高准确度单分子测序系统（PacBio，Sequel IIe）', value: '260' },
-  { label: '热重分析仪', value: '261' },
-  { label: '拉制仪（Sutter，P97）', value: '262' },
-  { label: '高通量测序仪（赛陆医疗，Salus Pro）-B槽', value: '264' },
-  { label: '小鼠胚胎净化服务预约', value: '265' },
-  { label: '小鼠精子复苏服务预约', value: '266' },
-  { label: '小鼠胚胎复苏服务预约', value: '267' },
-  { label: '小鼠精子冷冻保种服务预约', value: '268' },
-  { label: '小鼠胚胎冷冻保种服务预约', value: '269' },
-  { label: '高通量实时荧光检测分析系统(FLIPR Penta)', value: '270' },
-  { label: '实验操作技术服务', value: '271' },
-  { label: '小动物肺功能检测系统（PFT）', value: '272' },
-  { label: '小动物全身体积描记检测系统（WBP）', value: '273' },
-  { label: '小动物气道阻力与肺顺应性检测系统（RC）', value: '274' },
-  { label: '1018生物安全柜', value: '275' },
-  { label: '安乐死室生物安全柜与生物超净台', value: '276' },
-  { label: '高通量核酸分析仪', value: '285' },
-  { label: '国产接触式光刻机', value: '286' },
-  { label: '面投影3D打印机', value: '287' },
-  { label: '双光子3D打印机', value: '288' },
-  { label: '多层生化培养系统 （Multiron Standard）-2', value: '289' },
-  { label: 'Exer 3/6小鼠跑步机', value: '290' },
-  { label: '小动物活体成像', value: '291' },
-  { label: '角分辨光谱测量系统', value: '292' },
-  { label: '在体多通道记录系统', value: '293' },
-  { label: '封膜仪（Biorad，PX1）', value: '294' },
-  { label: '核酸药物分析系统（5200）', value: '295' },
-  { label: '高通量蛋白晶体自动观察系统（RI1000）', value: '296' },
-  { label: '超纯水仪', value: '297' },
-  { label: '洗板机', value: '298' },
-  { label: '生化培养箱', value: '299' },
-  { label: '分选型流式细胞仪（SONY LE-MA900FP）-靠窗', value: '300' },
-  { label: '冰冻切片机-3', value: '301' },
-  { label: '（EVIDENT VS 200）全自动玻片扫描系统', value: '303' },
-  { label: '高压冷冻仪（Leica EM ICE）', value: '315' },
-  { label: '高压冷冻仪（WOHLWEND HPF COMPACT 03）', value: '316' },
-  { label: '冷冻替代仪1（Leica EM ASF2）', value: '317' },
-  { label: '冷冻替代仪2（Leica EM ASF2）', value: '318' },
-  { label: '超薄切片机（Leica EM UC7）', value: '319' },
-  { label: '冷冻超薄切片机（Leica EM UC7FC7）', value: '320' },
-  { label: '冷冻超薄切片机（Boeckeler PTXL/LN）', value: '321' },
-  { label: '高通量测序仪（真迈生物，SURFSeq 5000）-A槽', value: '322' },
-  { label: '高通量测序仪（真迈生物，SURFSeq 5000）-B槽', value: '323' },
-  { label: '高真空离子溅射镀膜机（Quorum Q150R S Plus）', value: '324' },
-  { label: '场发射扫描电子显微镜（ZEISS GeminiSEM 500）', value: '325' },
-  { label: '三重四极杆-线性离子阱液质联用仪', value: '326' },
-  { label: 'X射线单晶衍射仪', value: '327' },
-  { label: 'Waters Connect软件工作站-配套高分辨质谱（QTof）使用', value: '330' },
-  { label: '生物岛园区（Olympus FV3000）激光共聚焦显微镜', value: '331' },
-  { label: 'LiTone XL 大样本激光片层扫描显微镜', value: '332' },
-  { label: 'Livecyte2 实时细胞功能及单细胞行为分析系统', value: '333' },
-  { label: '纳米流式分析仪（Apogee Micro Plus）', value: '334' },
-  { label: '微量分馏系统', value: '335' },
-  { label: '非对称轨道无损超高分辨率液质联用仪（Orbitrap Astral）', value: '336' },
-  { label: '高通量测序仪（DNBSEQ-T7）', value: '337' },
-  { label: '自动化样本制备系统（MGISP-960）', value: '338' },
-  { label: '120kV透射电镜-1', value: '339' },
-  { label: '细胞计数仪', value: '341' },
-  { label: 'MExplorer Ultimate 代谢组学分析软件', value: '343' },
-  { label: '点胶机', value: '344' },
-  { label: '进口接触式光刻机', value: '345' },
-  { label: '准分子激光', value: '346' },
-  { label: 'IBE刻蚀机', value: '347' },
-  { label: 'Parylene沉积', value: '348' },
-  { label: '微流控芯片实验系统', value: '349' },
-  { label: '三维流场测试仪', value: '350' },
-  { label: '椭偏仪', value: '351' },
-  { label: '台阶仪', value: '352' },
-  { label: '形状测量激光显微系统', value: '353' },
-  { label: '酸腐蚀槽', value: '354' },
-  { label: '碱腐蚀槽', value: '355' },
-  { label: '冷冻双束扫描电镜（Aquilos2）', value: '356' },
-  { label: '热压成型机', value: '357' },
-  { label: '热压键合机', value: '358' },
-  { label: '120kV透射电镜-2(带冷冻杆)', value: '359' },
-  { label: '小动物肺功能检测系统（PFT）D1020', value: '360' },
-  { label: '三重四极杆电感耦合等离子体质谱仪', value: '361' },
-  { label: '水等离子体处理机', value: '362' },
-  { label: '扫描电化学显微镜', value: '364' },
-  { label: '多动能微电子打印机', value: '365' },
-  { label: '表面处理通风橱', value: '366' },
-  { label: '分子相互作用分析系统（极瞳生命）', value: '368' },
-  { label: '显微镜', value: '369' },
-  { label: '体视荧光显微镜', value: '371' },
-  { label: '实时荧光定量PCR仪（Thermo Q 3）(生物岛)', value: '373' },
-  { label: '电镜中心液氮罐', value: '374' }
-])
+// 仪器选项 - 从接口动态获取，根据用户权限过滤
+const equipmentOptions = ref([])
 
 // 计算选择的仪器名称
 const selectedEquipmentName = computed(() => {
@@ -671,69 +372,6 @@ const selectedEquipmentName = computed(() => {
   return equipment ? equipment.label : '未知仪器'
 })
 
-// 搜索过滤仪器选项
-const filterEquipmentOptions = () => {
-  if (!equipmentSearchKeyword.value) {
-    filteredEquipmentOptions.value = []
-    showEquipmentDropdown.value = false
-    return
-  }
-  
-  const keyword = equipmentSearchKeyword.value.toLowerCase()
-  filteredEquipmentOptions.value = equipmentOptions.value.filter(option => 
-    option.label.toLowerCase().includes(keyword) || 
-    option.value.toString().includes(keyword)
-  )
-  showEquipmentDropdown.value = filteredEquipmentOptions.value.length > 0
-  
-  // 计算下拉框位置
-  nextTick(() => {
-    updateDropdownPosition()
-  })
-}
-
-// 更新下拉框位置
-const updateDropdownPosition = () => {
-  if (!equipmentSearchInput.value) return
-  
-  const inputEl = equipmentSearchInput.value.$el
-  const rect = inputEl.getBoundingClientRect()
-  
-  dropdownStyle.value = {
-    position: 'fixed',
-    top: `${rect.bottom + window.scrollY}px`,
-    left: `${rect.left + window.scrollX}px`,
-    width: `${rect.width}px`,
-    zIndex: 999999
-  }
-}
-
-// 隐藏下拉框
-const hideDropdown = () => {
-  setTimeout(() => {
-    showEquipmentDropdown.value = false
-  }, 200)
-}
-
-// 选择仪器
-const selectEquipment = (equipment) => {
-  queryForm.equipmentId = equipment.value
-  equipmentSearchKeyword.value = equipment.label
-  showEquipmentDropdown.value = false
-  // 清除下拉框样式
-  dropdownStyle.value = {}
-}
-
-// 仪器搜索输入框获得焦点时显示下拉框
-const handleEquipmentSearchFocus = () => {
-  if (equipmentSearchKeyword.value) {
-    filterEquipmentOptions()
-  }
-  // 更新位置
-  nextTick(() => {
-    updateDropdownPosition()
-  })
-}
 
 // 计算基本使用统计数据 - 重新设计，每种统计类型单独成行
 const basicStatsData = computed(() => {
@@ -913,14 +551,10 @@ const handleReset = () => {
   queryForm.equipmentId = ''
   queryForm.startDate = ''
   queryForm.endDate = ''
-  equipmentSearchKeyword.value = ''
   basicData.value = null
   usageData.value = []
   filteredUsageData.value = []
   usageStats.value = null
-  showEquipmentDropdown.value = false
-  filteredEquipmentOptions.value = []
-  dropdownStyle.value = {}
 }
 
 // 显示使用信息弹窗
@@ -1005,22 +639,6 @@ const handleUsageSearch = () => {
   })
 }
 
-// 查看培训详情
-const viewTraining = (url) => {
-  if (url) {
-    // 移除URL中的反引号
-    const cleanUrl = url.replace(/`/g, '')
-    window.open(cleanUrl, '_blank')
-  } else {
-    ElMessage.info('暂无培训详情链接')
-  }
-}
-
-// 查看摄像头
-const viewCamera = (camera) => {
-  ElMessage.info(`查看摄像头: ${camera.name}`)
-  // 这里可以添加实际的摄像头查看逻辑
-}
 
 // 格式化数字
 const formatNumber = (value) => {
@@ -1055,17 +673,133 @@ const handleUsageColumnChange = () => {
   visibleUsageColumns.value = usageColumns.value.filter(column => column.visible)
 }
 
+/**
+ * 导出仪器使用记录为 Excel
+ * 包含所有使用记录信息
+ */
+const handleExport = () => {
+  // 验证是否有数据
+  if (!usageData.value || usageData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+
+  try {
+    // 1. 准备导出数据
+    const exportDataList = usageData.value.map((item, index) => ({
+      '序号': index + 1,
+      '用户名': item.userName || item.user || '-',
+      '课题组': item.groupName || item.group || '-',
+      '使用时长(h)': item.duration || item.time || '0',
+      '使用次数': item.count || item.times || 0,
+      '使用日期': item.date || item.useDate || '-',
+      '使用目的': item.purpose || '-',
+      '备注': item.remark || item.notes || '-'
+    }))
+
+    // 2. 定义列配置
+    const columns = [
+      { prop: '序号', label: '序号', width: 10 },
+      { prop: '用户名', label: '用户名', width: 20 },
+      { prop: '课题组', label: '课题组', width: 25 },
+      { prop: '使用时长(h)', label: '使用时长(h)', width: 15 },
+      { prop: '使用次数', label: '使用次数', width: 12 },
+      { prop: '使用日期', label: '使用日期', width: 15 },
+      { prop: '使用目的', label: '使用目的', width: 25 },
+      { prop: '备注', label: '备注', width: 30 }
+    ]
+
+    // 3. 生成文件名
+    const filename = `仪器使用记录_${selectedEquipmentName.value || '全部'}`
+
+    // 4. 调用导出函数
+    exportToExcel(exportDataList, columns, filename)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败: ' + error.message)
+  }
+}
+
+/**
+ * 加载仪器选项
+ * 根据用户权限从接口获取仪器列表
+ * - 超级管理员、科研平台总体管理员、行政管理部门：可以查看所有仪器
+ * - 其他用户:只能查看自己有权限的仪器(从用户信息中获取)
+ */
+const loadEquipmentOptions = async () => {
+  try {
+    // 检查用户是否有全部数据权限
+    const hasFullPermission = hasFullDataPermission(userStore.userRole)
+
+    // 调试日志
+    console.log('=== 加载仪器选项 ===')
+    console.log('用户角色:', userStore.userRole)
+    console.log('是否有全部权限:', hasFullPermission)
+    console.log('用户仪器ID列表:', userStore.equipmentIds)
+
+    if (hasFullPermission) {
+      // 全权限用户：从接口获取所有仪器
+      const response = await getDetailedList()
+      console.log('接口返回数据:', response)
+      if (response.code === '00000' && response.data && response.data.instrumentInfoList) {
+        equipmentOptions.value = response.data.instrumentInfoList.map(item => ({
+          label: item.name || item.instrumentName || `仪器 ${item.id}`,
+          value: String(item.id)
+        }))
+        console.log('加载的仪器选项数量:', equipmentOptions.value.length)
+      }
+    } else {
+      // 受限用户：只能查看自己有权限的仪器
+      const equipmentIds = userStore.equipmentIds || []
+      console.log('受限用户仪器ID数量:', equipmentIds.length)
+
+      if (equipmentIds.length > 0) {
+        // 从接口获取所有仪器信息，然后过滤
+        const response = await getDetailedList()
+        console.log('接口返回数据:', response)
+
+        if (response.code === '00000' && response.data && response.data.instrumentInfoList) {
+          console.log('接口返回的仪器总数:', response.data.instrumentInfoList.length)
+
+          equipmentOptions.value = response.data.instrumentInfoList
+            .filter(item => {
+              // 将仪器ID转换为数字进行比较,因为userStore.equipmentIds中存储的是数字类型
+              const itemId = Number(item.id)
+              const isIncluded = equipmentIds.includes(itemId)
+              if (isIncluded) {
+                console.log('匹配到仪器:', item.id, item.name)
+              }
+              return isIncluded
+            })
+            .map(item => ({
+              label: item.name || item.instrumentName || `仪器 ${item.id}`,
+              value: String(item.id)
+            }))
+
+          console.log('过滤后的仪器选项数量:', equipmentOptions.value.length)
+        }
+      } else {
+        console.warn('用户没有分配任何仪器权限')
+        ElMessage.warning('您还没有分配任何仪器权限，请联系管理员')
+      }
+    }
+
+    console.log('最终仪器选项:', equipmentOptions.value)
+    console.log('==================')
+  } catch (error) {
+    console.error('加载仪器选项失败:', error)
+    ElMessage.error('加载仪器列表失败，请稍后重试')
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   // 初始化可见列
   visibleUsageColumns.value = usageColumns.value.filter(column => column.visible)
   
-  // 初始化搜索相关状态
-  filteredEquipmentOptions.value = []
-  showEquipmentDropdown.value = false
-  dropdownStyle.value = {}
-  
-  // 不自动选择仪器，需要用户手动选择
+  // 加载仪器选项
+  loadEquipmentOptions()
 })
 </script>
 
@@ -1324,80 +1058,4 @@ onMounted(() => {
   }
 }
 
-/* 仪器搜索下拉框样式 */
-.equipment-search-container {
-  position: relative;
-  display: inline-block;
-  z-index: 999999;
-}
-
-/* 确保搜索容器在最上层 */
-.equipment-search-container {
-  isolation: isolate;
-}
-
-.equipment-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 300px;
-  background: white;
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 999999;
-  margin-top: 4px;
-  transform: translateZ(0); /* 强制硬件加速，避免层叠问题 */
-  will-change: transform; /* 优化性能 */
-}
-
-/* teleport渲染的下拉框样式 */
-.equipment-dropdown-teleported {
-  position: fixed !important;
-  background: white;
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 999999;
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.equipment-dropdown-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
-}
-
-.equipment-dropdown-item:hover {
-  background-color: #f5f7fa;
-}
-
-.equipment-dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.equipment-name {
-  font-size: 14px;
-  color: #303133;
-  margin-bottom: 2px;
-  line-height: 1.4;
-}
-
-.equipment-id {
-  font-size: 12px;
-  color: #909399;
-}
-
-.equipment-dropdown-empty {
-  padding: 12px;
-  text-align: center;
-  color: #909399;
-  font-size: 14px;
-}
 </style>

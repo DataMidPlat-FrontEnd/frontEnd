@@ -61,3 +61,17 @@ export function getAlarmData(params = {}) {
     data
   })
 }
+
+/**
+ * 获取详细清单数据（平台、房间、仪器映射列表）
+ * 用于将ID转换为实际名称
+ * @param {Object} params - 可选的过滤参数
+ * @returns {Promise} 返回详细清单数据，包含 groupList（平台）、room（房间）、instrumentInfoList（仪器）
+ */
+export function getDetailedList(params = {}) {
+  return request({
+    url: '/operateDock/detailedList',
+    method: 'post',
+    data: params
+  })
+}
