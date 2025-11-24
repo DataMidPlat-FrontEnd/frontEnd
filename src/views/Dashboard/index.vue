@@ -50,16 +50,16 @@
                 <span class="value">{{ userStore.userRole }}</span>
               </div>
               <div class="info-item">
-                <span class="label">所属平台ID</span>
-                <span class="value">{{ userStore.platformIds.join(', ') || '无' }}</span>
+                <span class="label">所属平台</span>
+                <span class="value">{{ displayPlatformNames.length > 0 ? displayPlatformNames.join(', ') : '无' }}</span>
               </div>
               <div class="info-item">
-                <span class="label">管辖房间ID</span>
-                <span class="value">{{ userStore.roomIds.join(', ') || '无' }}</span>
+                <span class="label">管辖房间</span>
+                <span class="value">{{ displayRoomNames.length > 0 ? displayRoomNames.join(', ') : '无' }}</span>
               </div>
               <div class="info-item full-width">
-                <span class="label">管辖仪器ID</span>
-                <span class="value">{{ userStore.equipmentIds.join(', ') || '无' }}</span>
+                <span class="label">管辖仪器</span>
+                <span class="value">{{ displayEquipmentNames.length > 0 ? displayEquipmentNames.join(', ') : '无' }}</span>
               </div>
               <div class="info-item full-width">
                 <span class="label">数据权限</span>
@@ -123,7 +123,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { getParkData } from '@/api/dashboard'
+import { getParkData, getDetailedList } from '@/api/dashboard'
 import { DataAnalysis, User, SwitchButton, UserFilled, Lock, Calendar, DocumentRemove } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -131,6 +131,13 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const parkData = ref(null)
+
+// 用于ID转换的映射数据
+const detailedListData = ref({})
+// 转换后的用户信息
+const displayPlatformNames = ref([])
+const displayRoomNames = ref([])
+const displayEquipmentNames = ref([])
 
 const kpiItems = computed(() => {
   const d = parkData.value || {}
@@ -163,6 +170,56 @@ const kpiItems = computed(() => {
     { key: 'trainPass', label: '培训通过率(%)', value: d.trainPass ?? '-' }
   ]
 })
+
+/**
+ * 将ID数组转换为实际名称
+ * 根据用户权限判断是否展示"全部"或具体名称
+ * 注意：全权限用户如果返回的ID列表为空，则显示"无"而不是"全部"
+ */
+const transformUserInfo = () => {
+  // 如果是超级管理员或有全部权限
+  if (userStore.hasFullPermission) {
+    // 检查是否有实际的ID列表返回
+    // 如果ID列表为空，则显示"无"；否则显示"全部"
+    displayPlatformNames.value = (userStore.platformIds && userStore.platformIds.length > 0) ? ['全部平台'] : []
+    displayRoomNames.value = (userStore.roomIds && userStore.roomIds.length > 0) ? ['全部房间'] : []
+    displayEquipmentNames.value = (userStore.equipmentIds && userStore.equipmentIds.length > 0) ? ['全部仪器'] : []
+    return
+  }
+
+  // 从详细清单数据中提取映射关系
+  const platformMap = {}
+  const roomMap = {}
+  const equipmentMap = {}
+
+  // 构建平台映射表
+  if (detailedListData.value.groupList && Array.isArray(detailedListData.value.groupList)) {
+    detailedListData.value.groupList.forEach(item => {
+      platformMap[item.id] = item.name || item.groupName || `平台 ${item.id}`
+    })
+  }
+
+  // 构建房间映射表
+  if (detailedListData.value.room && Array.isArray(detailedListData.value.room)) {
+    detailedListData.value.room.forEach(item => {
+      roomMap[item.id] = item.name || `房间 ${item.id}`
+    })
+  }
+
+  // 构建仪器映射表
+  if (detailedListData.value.instrumentInfoList && Array.isArray(detailedListData.value.instrumentInfoList)) {
+    detailedListData.value.instrumentInfoList.forEach(item => {
+      equipmentMap[item.id] = item.name || item.instrumentName || `仪器 ${item.id}`
+    })
+  }
+
+  // 转换平台ID为名称
+  displayPlatformNames.value = (userStore.platformIds || []).map(id => platformMap[id] || `平台 ${id}`)
+  // 转换房间ID为名称
+  displayRoomNames.value = (userStore.roomIds || []).map(id => roomMap[id] || `房间 ${id}`)
+  // 转换仪器ID为名称
+  displayEquipmentNames.value = (userStore.equipmentIds || []).map(id => equipmentMap[id] || `仪器 ${id}`)
+}
 
 // 权限参数透传
 const buildParams = () => {
@@ -248,17 +305,36 @@ const handleResize = () => {
 const loadDashboard = async () => {
   loading.value = true
   try {
+    // 并行获取园区数据和详细清单数据
     const params = {
       id: import.meta.env.VITE_PARK_ID,
       type: 0,
       ...buildParams()
     }
-    const { data } = await getParkData(params)
-    parkData.value = data || {}
+
+    // 同时发起两个请求
+    const [parkDataRes, detailedListRes] = await Promise.all([
+      getParkData(params),
+      getDetailedList({})
+    ])
+
+    // 处理园区数据
+    parkData.value = parkDataRes.data || {}
+
+    // 处理详细清单数据
+    if (detailedListRes && detailedListRes.data) {
+      detailedListData.value = detailedListRes.data
+    }
+
+    // 转换用户信息中的ID为名称
+    transformUserInfo()
+
+    // 初始化图表
     initCharts()
     updateChartsWithData(parkData.value)
   } catch (e) {
-    ElMessage.error(e?.message || '园区数据加载失败')
+    console.error('仪表板加载失败:', e)
+    ElMessage.error(e?.message || '仪表板加载失败')
   } finally {
     loading.value = false
   }
