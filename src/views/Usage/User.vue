@@ -106,7 +106,7 @@ const sortType = ref(0) // 0按次数 1按时长 2按收入
 /* 分页 */
 const page = ref(0)
 const pageSize = ref(20)
-const backendPageSize = 300
+const backendPageSize = 10000
 const total = ref(0)
 const tableData = ref([])
 const allData = ref([])
