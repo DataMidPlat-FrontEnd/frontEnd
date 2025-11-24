@@ -46,6 +46,7 @@
         border
         stripe
         style="width: 100%"
+        height="calc(100vh - 320px)"
         :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
       >
         <el-table-column prop="name" label="报警名称" min-width="220" show-overflow-tooltip />
@@ -247,6 +248,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
 }
 
 .table-card {

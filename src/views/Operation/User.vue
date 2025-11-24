@@ -1,6 +1,6 @@
 <template>
   <div class="user-operation">
-    <el-card class="page-header" v-loading="loading">
+    <el-card class="main-card" v-loading="loading">
       <template #header>
         <div class="card-header">
           <span>用户运营</span>
@@ -41,7 +41,7 @@
         <el-card class="stat-card" v-if="userCount !== null">
           <div class="stat-content">
             <div class="stat-icon" style="background-color: #e6f2ff;">
-              <el-icon :size="32" color="#409EFF">
+              <el-icon :size="24" color="#409EFF">
                 <User />
               </el-icon>
             </div>
@@ -55,7 +55,7 @@
         <el-card class="stat-card" v-if="researchGroupCount !== null">
           <div class="stat-content">
             <div class="stat-icon" style="background-color: #f0f9e6;">
-              <el-icon :size="32" color="#67C23A">
+              <el-icon :size="24" color="#67C23A">
                 <Collection />
               </el-icon>
             </div>
@@ -69,7 +69,7 @@
         <el-card class="stat-card" v-if="fundingCardCount !== null">
           <div class="stat-content">
             <div class="stat-icon" style="background-color: #fdf6e6;">
-              <el-icon :size="32" color="#E6A23C">
+              <el-icon :size="24" color="#E6A23C">
                 <CreditCard />
               </el-icon>
             </div>
@@ -79,9 +79,178 @@
             </div>
           </div>
         </el-card>
+        
+        <el-card class="stat-card" v-if="newUser !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #ffe6e6;">
+              <el-icon :size="24" color="#F56C6C">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">今日新增用户</div>
+              <div class="stat-value">{{ newUser }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="bookingUser !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #e6f7ff;">
+              <el-icon :size="32" color="#409EFF">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">总预约用户数</div>
+              <div class="stat-value">{{ bookingUser }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="internalUser !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #e1f3d8;">
+              <el-icon :size="24" color="#529b2e">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">内部用户数</div>
+              <div class="stat-value">{{ internalUser }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="externalUser !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #fff2e6;">
+              <el-icon :size="24" color="#d48806">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">外部用户数</div>
+              <div class="stat-value">{{ externalUser }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="internalGroup !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #fff7e6;">
+              <el-icon :size="24" color="#d46b08">
+                <Collection />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">内部课题组数</div>
+              <div class="stat-value">{{ internalGroup }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="externalGroup !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #fffbe6;">
+              <el-icon :size="24" color="#d4b106">
+                <Collection />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">外部课题组数</div>
+              <div class="stat-value">{{ externalGroup }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="internalCard !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #f6e6ff;">
+              <el-icon :size="24" color="#722ed1">
+                <CreditCard />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">内部经费卡数</div>
+              <div class="stat-value">{{ internalCard }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="externalCard !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #e6ffe6;">
+              <el-icon :size="24" color="#389e0d">
+                <CreditCard />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">外部经费卡数</div>
+              <div class="stat-value">{{ externalCard }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <!-- 日活分类统计 -->
+        <el-card class="stat-card" v-if="totalDailyActive !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #fff2e6;">
+              <el-icon :size="32" color="#d46b08">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">总日活</div>
+              <div class="stat-value">{{ totalDailyActive }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="bookingDailyActive !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #e6f7ff;">
+              <el-icon :size="24" color="#1890ff">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">预约系统日活</div>
+              <div class="stat-value">{{ bookingDailyActive }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="trainingDailyActive !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #ffe6e6;">
+              <el-icon :size="24" color="#ff4d4f">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">培训系统日活</div>
+              <div class="stat-value">{{ trainingDailyActive }}</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card" v-if="monitoringDailyActive !== null">
+          <div class="stat-content">
+            <div class="stat-icon" style="background-color: #f6ffed;">
+              <el-icon :size="24" color="#52c41a">
+                <User />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-title">环境监测系统日活</div>
+              <div class="stat-value">{{ monitoringDailyActive }}</div>
+            </div>
+          </div>
+        </el-card>
       </div>
 
-      <!-- 图表区域 - 用户类型分布、日活走势 -->
+      <!-- 图表区域 - 用户类型分布、各类日活走势 -->
       <div class="chart-section" v-if="hasChartData">
         <el-card class="chart-card" v-if="userTypeDistribution.length > 0">
           <template #header>
@@ -92,9 +261,30 @@
         
         <el-card class="chart-card" v-if="dailyActiveTrend.length > 0">
           <template #header>
-            <span>日活走势</span>
+            <span>总日活走势</span>
           </template>
           <div ref="trendChart" class="chart-container"></div>
+        </el-card>
+        
+        <el-card class="chart-card" v-if="bookingTrend.length > 0">
+          <template #header>
+            <span>预约系统日活走势</span>
+          </template>
+          <div ref="bookingChart" class="chart-container"></div>
+        </el-card>
+        
+        <el-card class="chart-card" v-if="trainTrend.length > 0">
+          <template #header>
+            <span>培训系统日活走势</span>
+          </template>
+          <div ref="trainingChart" class="chart-container"></div>
+        </el-card>
+        
+        <el-card class="chart-card" v-if="monitorTrend.length > 0">
+          <template #header>
+            <span>环境监测系统日活走势</span>
+          </template>
+          <div ref="monitoringChart" class="chart-container"></div>
         </el-card>
       </div>
 
@@ -122,6 +312,14 @@ const dateRange = ref([])
 const userCount = ref(null)
 const researchGroupCount = ref(null)
 const fundingCardCount = ref(null)
+const newUser = ref(null) // 今日新增用户数
+const bookingUser = ref(null) // 总预约用户数
+const internalUser = ref(null) // 内部用户数
+const externalUser = ref(null) // 外部用户数
+const internalGroup = ref(null) // 内部课题组数
+const externalGroup = ref(null) // 外部课题组数
+const internalCard = ref(null) // 内部经费卡数
+const externalCard = ref(null) // 外部经费卡数
 
 // 图表数据
 const userTypeDistribution = ref([])
@@ -132,24 +330,35 @@ const monitorTrend = ref([])
 const bookingTrend = ref([])
 const trainTrend = ref([])
 
-// 其他统计数据
-const bUser = ref(null)
-const newUser = ref(null)
-const iUser = ref(null)
-const oUser = ref(null)
-const iGroup = ref(null)
-const oGroup = ref(null)
-const iCard = ref(null)
-const oCard = ref(null)
+// 日活分类数据
+const totalDailyActive = ref(null) // 总日活
+const bookingDailyActive = ref(null) // 预约系统日活
+const trainingDailyActive = ref(null) // 培训系统日活
+const monitoringDailyActive = ref(null) // 环境监测系统日活
 
 const typeChart = ref(null)
 const trendChart = ref(null)
+const bookingChart = ref(null)
+const trainingChart = ref(null)
+const monitoringChart = ref(null)
 
 // 是否有数据
 const hasData = computed(() => {
   return userCount.value !== null || 
          researchGroupCount.value !== null || 
-         fundingCardCount.value !== null
+         fundingCardCount.value !== null ||
+         newUser.value !== null ||
+         bookingUser.value !== null ||
+         internalUser.value !== null ||
+         externalUser.value !== null ||
+         internalGroup.value !== null ||
+         externalGroup.value !== null ||
+         internalCard.value !== null ||
+         externalCard.value !== null ||
+         totalDailyActive.value !== null ||
+         bookingDailyActive.value !== null ||
+         trainingDailyActive.value !== null ||
+         monitoringDailyActive.value !== null
 })
 
 const hasChartData = computed(() => {
@@ -187,16 +396,20 @@ const fetchData = async () => {
         userCount.value = data?.tUser ?? null
         researchGroupCount.value = data?.tGroup ?? null
         fundingCardCount.value = data?.tCard ?? null
-        
-        // 其他统计数据
-        bUser.value = data?.bUser ?? null
         newUser.value = data?.new ?? null
-        iUser.value = data?.iUser ?? null
-        oUser.value = data?.oUser ?? null
-        iGroup.value = data?.iGroup ?? null
-        oGroup.value = data?.oGroup ?? null
-        iCard.value = data?.iCard ?? null
-        oCard.value = data?.oCard ?? null
+        bookingUser.value = data?.bUser ?? null
+        internalUser.value = data?.iUser ?? null
+        externalUser.value = data?.oUser ?? null
+        internalGroup.value = data?.iGroup ?? null
+        externalGroup.value = data?.oGroup ?? null
+        internalCard.value = data?.iCard ?? null
+        externalCard.value = data?.oCard ?? null
+        
+        // 日活分类数据
+        totalDailyActive.value = data?.totalDailyActive ?? null
+        bookingDailyActive.value = data?.bookingDailyActive ?? null
+        trainingDailyActive.value = data?.trainingDailyActive ?? null
+        monitoringDailyActive.value = data?.monitoringDailyActive ?? null
         
         // 图表数据
         userTypeDistribution.value = data?.userType ?? []
@@ -227,6 +440,9 @@ const fetchData = async () => {
 const initCharts = () => {
   initTypeChart()
   initTrendChart()
+  initBookingChart()
+  initTrainingChart()
+  initMonitoringChart()
 }
 
 const initTypeChart = () => {
@@ -262,6 +478,138 @@ const initTypeChart = () => {
   chart.setOption(option)
 }
 
+const initBookingChart = () => {
+  if (!bookingChart.value || bookingTrend.value.length === 0) return
+  
+  const chart = echarts.init(bookingChart.value)
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: bookingTrend.value.map(item => item.date || item.time || item.day || ''),
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '预约系统日活',
+      nameTextStyle: {
+        color: '#666'
+      },
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    series: [{
+      data: bookingTrend.value.map(item => Number(item.amount ?? item.activeCount ?? item.dailyActive ?? item.count ?? 0) || 0),
+      type: 'line',
+      smooth: true,
+      lineStyle: {
+        color: '#1890ff',
+        width: 2
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(24, 144, 255, 0.3)' },
+          { offset: 1, color: 'rgba(24, 144, 255, 0.1)' }
+        ])
+      }
+    }]
+  }
+  chart.setOption(option)
+}
+
+const initTrainingChart = () => {
+  if (!trainingChart.value || trainTrend.value.length === 0) return
+  
+  const chart = echarts.init(trainingChart.value)
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: trainTrend.value.map(item => item.date || item.time || item.day || ''),
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '培训系统日活',
+      nameTextStyle: {
+        color: '#666'
+      },
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    series: [{
+      data: trainTrend.value.map(item => Number(item.amount ?? item.activeCount ?? item.dailyActive ?? item.count ?? 0) || 0),
+      type: 'line',
+      smooth: true,
+      lineStyle: {
+        color: '#ff4d4f',
+        width: 2
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(255, 77, 79, 0.3)' },
+          { offset: 1, color: 'rgba(255, 77, 79, 0.1)' }
+        ])
+      }
+    }]
+  }
+  chart.setOption(option)
+}
+
+const initMonitoringChart = () => {
+  if (!monitoringChart.value || monitorTrend.value.length === 0) return
+  
+  const chart = echarts.init(monitoringChart.value)
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: monitorTrend.value.map(item => item.date || item.time || item.day || ''),
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '环境监测系统日活',
+      nameTextStyle: {
+        color: '#666'
+      },
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    series: [{
+      data: monitorTrend.value.map(item => Number(item.amount ?? item.activeCount ?? item.dailyActive ?? item.count ?? 0) || 0),
+      type: 'line',
+      smooth: true,
+      lineStyle: {
+        color: '#52c41a',
+        width: 2
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
+          { offset: 1, color: 'rgba(82, 196, 26, 0.1)' }
+        ])
+      }
+    }]
+  }
+  chart.setOption(option)
+}
+
 const initTrendChart = () => {
   if (!trendChart.value || dailyActiveTrend.value.length === 0) return
   
@@ -279,7 +627,7 @@ const initTrendChart = () => {
     },
     yAxis: {
       type: 'value',
-      name: '日活用户数',
+      name: '总日活用户数',
       nameTextStyle: {
         color: '#666'
       },
@@ -319,26 +667,46 @@ const exportData = () => {
     const summaryData = [{
       '统计项目': '用户数',
       '总计': userCount.value || 0,
-      '内部': iUser.value || 0,
-      '外部': oUser.value || 0
+      '内部': internalUser.value || 0,
+      '外部': externalUser.value || 0
     }, {
       '统计项目': '课题组数',
       '总计': researchGroupCount.value || 0,
-      '内部': iGroup.value || 0,
-      '外部': oGroup.value || 0
+      '内部': internalGroup.value || 0,
+      '外部': externalGroup.value || 0
     }, {
       '统计项目': '经费卡数',
       '总计': fundingCardCount.value || 0,
-      '内部': iCard.value || 0,
-      '外部': oCard.value || 0
+      '内部': internalCard.value || 0,
+      '外部': externalCard.value || 0
     }, {
       '统计项目': '新增用户',
       '总计': newUser.value || 0,
       '内部': '-',
       '外部': '-'
     }, {
-      '统计项目': '活跃用户',
-      '总计': bUser.value || 0,
+      '统计项目': '预约用户',
+      '总计': bookingUser.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }, {
+      '统计项目': '总日活',
+      '总计': totalDailyActive.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }, {
+      '统计项目': '预约系统日活',
+      '总计': bookingDailyActive.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }, {
+      '统计项目': '培训系统日活',
+      '总计': trainingDailyActive.value || 0,
+      '内部': '-',
+      '外部': '-'
+    }, {
+      '统计项目': '环境监测系统日活',
+      '总计': monitoringDailyActive.value || 0,
       '内部': '-',
       '外部': '-'
     }]
@@ -496,16 +864,23 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.main-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
 .user-operation {
   padding: 16px;
+  background-color: #ffffff;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
+  color: #000000;
 }
 
 .filter-section {
@@ -517,6 +892,9 @@ onMounted(() => {
 
 .filter-form {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .stats-grid {
@@ -527,6 +905,14 @@ onMounted(() => {
 }
 
 .stat-card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  
   .stat-content {
     display: flex;
     align-items: center;
@@ -535,11 +921,12 @@ onMounted(() => {
   }
   
   .stat-icon {
-    padding: 16px;
+    padding: 12px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
   }
   
   .stat-info {
@@ -548,14 +935,15 @@ onMounted(() => {
   
   .stat-title {
     font-size: 14px;
-    color: #909399;
+    color: #000000;
     margin-bottom: 8px;
+    font-weight: 500;
   }
   
   .stat-value {
     font-size: 24px;
     font-weight: 600;
-    color: #303133;
+    color: #000000;
   }
 }
 

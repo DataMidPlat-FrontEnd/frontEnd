@@ -17,8 +17,8 @@
         </el-form-item>
         
         <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" size="small" @click="handleQuery">查询</el-button>
+          <el-button size="small" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -60,6 +60,7 @@
         border
         stripe
         style="width: 100%"
+        height="calc(100vh - 320px)"
         :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
         v-if="tableData.length > 0"
       >
@@ -295,6 +296,31 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+
+.query-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.query-form :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.query-form .el-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.query-form :deep(.el-select) {
+  width: 240px;
 }
 
 .data-card {

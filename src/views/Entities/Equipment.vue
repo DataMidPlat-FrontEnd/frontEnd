@@ -372,6 +372,69 @@ const selectedEquipmentName = computed(() => {
   return equipment ? equipment.label : '未知仪器'
 })
 
+// 搜索过滤仪器选项
+const filterEquipmentOptions = () => {
+  if (!equipmentSearchKeyword.value) {
+    filteredEquipmentOptions.value = []
+    showEquipmentDropdown.value = false
+    return
+  }
+  
+  const keyword = equipmentSearchKeyword.value.toLowerCase()
+  filteredEquipmentOptions.value = equipmentOptions.value.filter(option => 
+    option.label.toLowerCase().includes(keyword) || 
+    option.value.toString().includes(keyword)
+  )
+  showEquipmentDropdown.value = filteredEquipmentOptions.value.length > 0
+  
+  // 计算下拉框位置
+  nextTick(() => {
+    updateDropdownPosition()
+  })
+}
+
+// 更新下拉框位置
+const updateDropdownPosition = () => {
+  if (!equipmentSearchInput.value) return
+  
+  const inputEl = equipmentSearchInput.value.$el
+  const rect = inputEl.getBoundingClientRect()
+  
+  dropdownStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    zIndex: 999999
+  }
+}
+
+// 隐藏下拉框
+const hideDropdown = () => {
+  setTimeout(() => {
+    showEquipmentDropdown.value = false
+  }, 200)
+}
+
+// 选择仪器
+const selectEquipment = (equipment) => {
+  queryForm.equipmentId = equipment.value
+  equipmentSearchKeyword.value = equipment.label
+  showEquipmentDropdown.value = false
+  // 清除下拉框样式
+  dropdownStyle.value = {}
+}
+
+// 仪器搜索输入框获得焦点时显示下拉框
+const handleEquipmentSearchFocus = () => {
+  if (equipmentSearchKeyword.value) {
+    filterEquipmentOptions()
+  }
+  // 更新位置
+  nextTick(() => {
+    updateDropdownPosition()
+  })
+}
 
 // 计算基本使用统计数据 - 重新设计，每种统计类型单独成行
 const basicStatsData = computed(() => {
@@ -820,6 +883,23 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+
+/* 保证查询控件与按钮在同一水平线 */
+.query-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.query-form :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.query-form .el-tag {
+  display: inline-flex;
+  align-items: center;
 }
 
 .data-card {
@@ -1058,4 +1138,75 @@ onMounted(() => {
   }
 }
 
+/* 仪器搜索下拉框样式 */
+.equipment-search-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.equipment-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 999999;
+  margin-top: 4px;
+  transform: translateZ(0); /* 强制硬件加速，避免层叠问题 */
+  will-change: transform; /* 优化性能 */
+}
+
+/* teleport渲染的下拉框样式 */
+.equipment-dropdown-teleported {
+  position: fixed !important;
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 999999;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.equipment-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.equipment-dropdown-item:hover {
+  background-color: #f5f7fa;
+}
+
+.equipment-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.equipment-name {
+  font-size: 14px;
+  color: #303133;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.equipment-id {
+  font-size: 12px;
+  color: #909399;
+}
+
+.equipment-dropdown-empty {
+  padding: 12px;
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+}
 </style>
