@@ -54,7 +54,7 @@
           <el-form-item label="关键字">
             <el-input
               v-model="keyword"
-              placeholder="仪器名称/资产编号/位置"
+              placeholder="仪器名称"
               clearable
               style="width: 220px"
               @keyup.enter="fetchData"
@@ -121,6 +121,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { getEquipmentUsage } from '@/api/usage'
+import { getDetailedList } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { exportToExcel } from '@/utils/export'
 
@@ -140,21 +141,8 @@ const total = ref(0)
 const tableData = ref([])
 const allData = ref([])
 
-/* 平台下拉选项（静态，可自行调整） */
-const platformOptions = ref([
-  { id: 8, name: '公共技术服务中心-影像成像子平台' },
-  { id: 10, name: '公共技术服务中心-蛋白与代谢组学子平台' },
-  { id: 11, name: '公共技术服务中心-细胞技术子平台' },
-  { id: 13, name: '公共技术服务中心-药物筛选子平台' },
-  { id: 14, name: '生物岛实验室' },
-  { id: 16, name: '生物安全二级实验室' },
-  { id: 17, name: '实验动物中心' },
-  { id: 19, name: '公共技术服务中心-微纳流控子平台' },
-  { id: 20, name: '国家生物信息中心粤港澳大湾区节点平台' },
-  { id: 21, name: '检测评价中心' },
-  { id: 22, name: '生物资源库' },
-  { id: 23, name: '公共技术服务中心-中心办公室' }
-])
+/* 平台下拉选项 - 从接口动态获取 */
+const platformOptions = ref([])
 
 /* 请求数据 */
 const fetchData = async () => {
@@ -310,8 +298,35 @@ watch(queryType, (newVal) => {
   }
 })
 
+/**
+ * 从 detailedList 接口获取平台列表
+ * 该接口返回包含 groupList 数组的数据
+ */
+const fetchPlatformOptions = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.groupList) {
+      // 将接口返回的 groupList 数组转换为下拉框选项格式
+      // { name: "平台名称", id: "平台ID" } -> { name: "平台名称", id: 平台ID }
+      platformOptions.value = response.data.groupList.map(g => ({
+        id: Number(g.id), // 转换为数字类型
+        name: g.name || g.groupName || `平台 ${g.id}`
+      }))
+      console.log('成功加载平台选项:', platformOptions.value.length, '个')
+    } else {
+      console.warn('获取平台列表失败或数据格式错误')
+    }
+  } catch (error) {
+    console.error('获取平台列表失败:', error)
+    ElMessage.error('获取平台列表失败')
+  }
+}
+
 onMounted(() => {
   console.log('Equipment.vue 组件挂载，准备加载数据...')
+  // 先加载平台选项
+  fetchPlatformOptions()
+  // 然后加载数据
   fetchData()
 })
 </script>

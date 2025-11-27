@@ -32,11 +32,11 @@
             />
           </el-form-item>
 
-          <!-- 课题组关键字 -->
-          <el-form-item label="课题组">
+          <!-- 用户名关键字 -->
+          <el-form-item label="用户名">
             <el-input
               v-model="keyword"
-              placeholder="请输入课题组关键字"
+              placeholder="请输入用户名关键字"
               clearable
               style="width: 220px"
               @keyup.enter="fetchData"

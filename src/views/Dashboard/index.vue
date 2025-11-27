@@ -20,8 +20,17 @@
         <!-- KPI 指标区 -->
         <div class="kpi-grid">
           <div class="kpi-card" v-for="item in kpiItems" :key="item.key">
-            <div class="kpi-title">{{ item.label }}</div>
-            <div class="kpi-value">{{ item.value }}</div>
+            <!-- 图标区域 -->
+            <div class="kpi-icon-wrapper" :style="{ backgroundColor: item.bgColor }">
+              <el-icon :size="24" :color="item.iconColor">
+                <component :is="getIconComponent(item.icon)" />
+              </el-icon>
+            </div>
+            <!-- 内容区域 -->
+            <div class="kpi-content">
+              <div class="kpi-title">{{ item.label }}</div>
+              <div class="kpi-value">{{ item.value }}</div>
+            </div>
           </div>
         </div>
 
@@ -40,6 +49,7 @@
             <div class="header-line"></div>
           </div>
           <div class="card-body">
+            <!-- 基本信息行 -->
             <div class="info-grid">
               <div class="info-item">
                 <span class="label">姓名</span>
@@ -54,19 +64,50 @@
                 <span class="value">{{ displayPlatformNames.length > 0 ? displayPlatformNames.join(', ') : '无' }}</span>
               </div>
               <div class="info-item">
-                <span class="label">管辖房间</span>
-                <span class="value">{{ displayRoomNames.length > 0 ? displayRoomNames.join(', ') : '无' }}</span>
-              </div>
-              <div class="info-item full-width">
-                <span class="label">管辖仪器</span>
-                <span class="value">{{ displayEquipmentNames.length > 0 ? displayEquipmentNames.join(', ') : '无' }}</span>
-              </div>
-              <div class="info-item full-width">
                 <span class="label">数据权限</span>
                 <span class="value permission" :class="{ full: userStore.hasFullPermission }">
                   <el-icon><Lock /></el-icon>
                   {{ userStore.hasFullPermission ? '全部数据' : '受限数据' }}
                 </span>
+              </div>
+            </div>
+
+            <!-- 管辖资源区域 - 分开展示 -->
+            <div class="resources-section" v-if="displayRoomNames.length > 0 || displayEquipmentNames.length > 0">
+              <div class="resource-group">
+                <div class="resource-header">
+                  <el-icon color="#409EFF"><Collection /></el-icon>
+                  <span>管辖房间</span>
+                </div>
+                <div class="resource-tags">
+                  <el-tag
+                    v-for="(room, index) in displayRoomNames"
+                    :key="`room-${index}`"
+                    type="info"
+                    effect="light"
+                  >
+                    {{ room }}
+                  </el-tag>
+                  <span v-if="displayRoomNames.length === 0" class="empty-text">无</span>
+                </div>
+              </div>
+
+              <div class="resource-group">
+                <div class="resource-header">
+                  <el-icon color="#67C23A"><Monitor /></el-icon>
+                  <span>管辖仪器</span>
+                </div>
+                <div class="resource-tags">
+                  <el-tag
+                    v-for="(equipment, index) in displayEquipmentNames"
+                    :key="`equipment-${index}`"
+                    type="success"
+                    effect="light"
+                  >
+                    {{ equipment }}
+                  </el-tag>
+                  <span v-if="displayEquipmentNames.length === 0" class="empty-text">无</span>
+                </div>
               </div>
             </div>
           </div>
@@ -124,7 +165,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getParkData, getDetailedList } from '@/api/dashboard'
-import { DataAnalysis, User, SwitchButton, UserFilled, Lock, Calendar, DocumentRemove } from '@element-plus/icons-vue'
+import { DataAnalysis, User, SwitchButton, UserFilled, Lock, Calendar, DocumentRemove, Monitor, Collection, CreditCard, Clock, Money, TrendCharts, Trophy, Reading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -139,35 +180,39 @@ const displayPlatformNames = ref([])
 const displayRoomNames = ref([])
 const displayEquipmentNames = ref([])
 
+/**
+ * 获取 KPI 指标项，包含图标和背景颜色
+ * 每个指标项包含：key、label、value、icon、bgColor、iconColor
+ */
 const kpiItems = computed(() => {
   const d = parkData.value || {}
   return [
-    { key: 'name', label: '园区名称', value: d.name ?? '-' },
-    { key: 'usage', label: '园区用途', value: d.usage ?? '-' },
-    { key: 'area', label: '园区面积(㎡)', value: d.area ?? '-' },
-    { key: 'building', label: '楼栋数量', value: d.building ?? '-' },
-    { key: 'ins', label: '仪器数量', value: d.ins ?? '-' },
-    { key: 'insUse', label: '仪器使用次数', value: d.insUse ?? '-' },
-    { key: 'tUser', label: '总用户数', value: d.tUser ?? '-' },
-    { key: 'iUser', label: '内部用户数', value: d.iUser ?? '-' },
-    { key: 'oUser', label: '外部用户数', value: d.oUser ?? '-' },
-    { key: 'totalAssetValue', label: '资产总价值(万元)', value: d.totalAssetValue ?? '-' },
-    { key: 'tIncome', label: '总收入(元)', value: d.tIncome ?? '-' },
-    { key: 'iIncome', label: '内部收入(元)', value: d.iIncome ?? '-' },
-    { key: 'oIncome', label: '外部收入(元)', value: d.oIncome ?? '-' },
-    { key: 'tTime', label: '总机时数(小时)', value: d.tTime ?? '-' },
-    { key: 'iTime', label: '内部机时数(小时)', value: d.iTime ?? '-' },
-    { key: 'oTime', label: '外部机时数(小时)', value: d.oTime ?? '-' },
-    { key: 'tGroup', label: '总课题组数', value: d.tGroup ?? '-' },
-    { key: 'iGroup', label: '内部课题组数', value: d.iGroup ?? '-' },
-    { key: 'oGroup', label: '外部课题组数', value: d.oGroup ?? '-' },
-    { key: 'tCard', label: '总经费卡数', value: d.tCard ?? '-' },
-    { key: 'iCard', label: '内部经费卡数', value: d.iCard ?? '-' },
-    { key: 'oCard', label: '外部经费卡数', value: d.oCard ?? '-' },
-    { key: 'train', label: '培训场数', value: d.train ?? '-' },
-    { key: 'trainUser', label: '培训人数', value: d.trainUser ?? '-' },
-    { key: 'trainInfo', label: '培训资料数', value: d.trainInfo ?? '-' },
-    { key: 'trainPass', label: '培训通过率(%)', value: d.trainPass ?? '-' }
+    { key: 'name', label: '园区名称', value: d.name ?? '-', icon: 'building', bgColor: '#e6f2ff', iconColor: '#409EFF' },
+    { key: 'usage', label: '园区用途', value: d.usage ?? '-', icon: 'collection', bgColor: '#f0f9e6', iconColor: '#67C23A' },
+    { key: 'area', label: '园区面积(㎡)', value: d.area ?? '-', icon: 'monitor', bgColor: '#fdf6e6', iconColor: '#E6A23C' },
+    { key: 'building', label: '楼栋数量', value: d.building ?? '-', icon: 'monitor', bgColor: '#e1f3d8', iconColor: '#529b2e' },
+    { key: 'ins', label: '仪器数量', value: d.ins ?? '-', icon: 'monitor', bgColor: '#e6f2ff', iconColor: '#409EFF' },
+    { key: 'insUse', label: '仪器使用次数', value: d.insUse ?? '-', icon: 'trendCharts', bgColor: '#fdf6e6', iconColor: '#E6A23C' },
+    { key: 'tUser', label: '总用户数', value: d.tUser ?? '-', icon: 'user', bgColor: '#e6f2ff', iconColor: '#409EFF' },
+    { key: 'iUser', label: '内部用户数', value: d.iUser ?? '-', icon: 'user', bgColor: '#e1f3d8', iconColor: '#529b2e' },
+    { key: 'oUser', label: '外部用户数', value: d.oUser ?? '-', icon: 'user', bgColor: '#fff2e6', iconColor: '#d48806' },
+    { key: 'totalAssetValue', label: '资产总价值(万元)', value: d.totalAssetValue ?? '-', icon: 'money', bgColor: '#ffe6e6', iconColor: '#F56C6C' },
+    { key: 'tIncome', label: '总收入(元)', value: d.tIncome ?? '-', icon: 'money', bgColor: '#ffe6e6', iconColor: '#F56C6C' },
+    { key: 'iIncome', label: '内部收入(元)', value: d.iIncome ?? '-', icon: 'money', bgColor: '#ffe6f0', iconColor: '#c45656' },
+    { key: 'oIncome', label: '外部收入(元)', value: d.oIncome ?? '-', icon: 'money', bgColor: '#fff0e6', iconColor: '#d4a106' },
+    { key: 'tTime', label: '总机时数(小时)', value: d.tTime ?? '-', icon: 'clock', bgColor: '#f0f9e6', iconColor: '#67C23A' },
+    { key: 'iTime', label: '内部机时数(小时)', value: d.iTime ?? '-', icon: 'clock', bgColor: '#e1f3d8', iconColor: '#529b2e' },
+    { key: 'oTime', label: '外部机时数(小时)', value: d.oTime ?? '-', icon: 'clock', bgColor: '#fff2e6', iconColor: '#d48806' },
+    { key: 'tGroup', label: '总课题组数', value: d.tGroup ?? '-', icon: 'collection', bgColor: '#f0f9e6', iconColor: '#67C23A' },
+    { key: 'iGroup', label: '内部课题组数', value: d.iGroup ?? '-', icon: 'collection', bgColor: '#fff7e6', iconColor: '#d46b08' },
+    { key: 'oGroup', label: '外部课题组数', value: d.oGroup ?? '-', icon: 'collection', bgColor: '#fffbe6', iconColor: '#d4b106' },
+    { key: 'tCard', label: '总经费卡数', value: d.tCard ?? '-', icon: 'creditCard', bgColor: '#fdf6e6', iconColor: '#E6A23C' },
+    { key: 'iCard', label: '内部经费卡数', value: d.iCard ?? '-', icon: 'creditCard', bgColor: '#f6e6ff', iconColor: '#722ed1' },
+    { key: 'oCard', label: '外部经费卡数', value: d.oCard ?? '-', icon: 'creditCard', bgColor: '#e6ffe6', iconColor: '#389e0d' },
+    { key: 'train', label: '培训场数', value: d.train ?? '-', icon: 'reading', bgColor: '#e6f2ff', iconColor: '#409EFF' },
+    { key: 'trainUser', label: '培训人数', value: d.trainUser ?? '-', icon: 'user', bgColor: '#f0f9e6', iconColor: '#67C23A' },
+    { key: 'trainInfo', label: '培训资料数', value: d.trainInfo ?? '-', icon: 'reading', bgColor: '#f0f8ff', iconColor: '#1890ff' },
+    { key: 'trainPass', label: '培训通过率(%)', value: d.trainPass ?? '-', icon: 'trophy', bgColor: '#fdf6e6', iconColor: '#E6A23C' }
   ]
 })
 
@@ -229,6 +274,26 @@ const buildParams = () => {
     room: userStore.roomIds,
     eq: userStore.equipmentIds
   }
+}
+
+/**
+ * 根据图标名称返回对应的图标组件
+ * 用于在模板中动态渲染图标
+ */
+const getIconComponent = (iconName) => {
+  const iconMap = {
+    'building': Monitor,
+    'collection': Collection,
+    'monitor': Monitor,
+    'user': User,
+    'trendCharts': TrendCharts,
+    'money': Money,
+    'clock': Clock,
+    'creditCard': CreditCard,
+    'reading': Reading,
+    'trophy': Trophy
+  }
+  return iconMap[iconName] || Monitor
 }
 
 // 背景粒子样式计算
@@ -559,24 +624,68 @@ onUnmounted(() => {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
+/**
+ * KPI 卡片样式 - 参考仪器运营、用户运营的设计
+ * 包含彩色图标和内容区域
+ */
 .kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
   border-radius: 12px;
   background: $bg-color;
   border: 1px solid $border-light;
-  transition: all 0.2s ease;
-  box-shadow: $box-shadow-light;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
-.kpi-card:hover { transform: translateY(-1px); }
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.08);
+}
 
-.kpi-title { color: $text-secondary; font-size: 12px; margin-bottom: 8px; }
+/**
+ * 图标包装器 - 圆形背景
+ */
+.kpi-icon-wrapper {
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 48px;
+  height: 48px;
+}
 
-.kpi-value { color: $text-primary; font-size: 18px; font-weight: 600; }
+/**
+ * KPI 内容区域
+ */
+.kpi-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.kpi-title {
+  color: $text-secondary;
+  font-size: 13px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.kpi-value {
+  color: $text-primary;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  word-break: break-all;
+}
 
 .chart-row {
   display: grid;
@@ -646,12 +755,19 @@ onUnmounted(() => {
   padding: 30px;
 }
 
+/**
+ * 基本信息网格 - 2列布局
+ */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  margin-bottom: 24px;
 }
 
+/**
+ * 基本信息项
+ */
 .info-item {
   display: flex;
   flex-direction: column;
@@ -666,9 +782,81 @@ onUnmounted(() => {
   grid-column: 1 / -1;
 }
 
-.label { font-size: 12px; color: $text-secondary; letter-spacing: 0.5px; }
+.label {
+  font-size: 12px;
+  color: $text-secondary;
+  letter-spacing: 0.5px;
+}
 
-.value { font-size: 16px; font-weight: 600; color: $text-primary; }
+.value {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+/**
+ * 管辖资源区域 - 分开展示房间和仪器
+ * 使用两列布局，每列显示一个资源类型
+ */
+.resources-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  padding-top: 16px;
+  border-top: 1px solid $border-light;
+}
+
+/**
+ * 资源组 - 包含标题和标签列表
+ */
+.resource-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/**
+ * 资源组标题 - 带图标
+ */
+.resource-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.resource-header :deep(.el-icon) {
+  font-size: 18px;
+}
+
+/**
+ * 资源标签容器 - 自动换行
+ */
+.resource-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.resource-tags :deep(.el-tag) {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * 空状态文本
+ */
+.empty-text {
+  font-size: 14px;
+  color: $text-secondary;
+  font-style: italic;
+}
 
 .permission {
   display: flex;
