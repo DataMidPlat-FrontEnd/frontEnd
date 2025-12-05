@@ -250,7 +250,11 @@ const handleLogin = async () => {
 
     // 登录表单
     .login-form {
-      .input-wrapper { position: relative; }
+      // 输入框包装器 - 确保宽度与按钮一致
+      .input-wrapper {
+        position: relative;
+        width: 100%;
+      }
 
       // 登录按钮
       .login-button {

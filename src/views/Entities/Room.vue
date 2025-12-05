@@ -276,8 +276,9 @@ const handleReset = () => {
 /**
  * 导出房间统计数据为 Excel
  * 包含所有房间统计信息
+ * 注意：需要获取每个房间的详细信息以获取传感器、摄像头等数据
  */
-const handleExport = () => {
+const handleExport = async () => {
   // 验证是否有数据
   if (!roomList.value || roomList.value.length === 0) {
     ElMessage.warning('暂无数据可导出')
@@ -285,19 +286,26 @@ const handleExport = () => {
   }
 
   try {
-    // 1. 准备导出数据
-    const exportDataList = roomList.value.map((item, index) => ({
-      '序号': index + 1,
-      '房间名称': item.name || '未知房间',
-      '房间用途': item.usage || '-',
-      '面积(m²)': item.area || '0',
-      '所属平台': (item.platform && item.platform.map(p => p.name).join(', ')) || '-',
-      '传感器数': (item.sensor && item.sensor.length) || 0,
-      '摄像头数': (item.camera && item.camera.length) || 0,
-      '报警数': (item.alarm && item.alarm.length) || 0
-    }))
+    // 1. 为每个房间获取详细信息，以获取传感器、摄像头等数据
+    const roomDetailsPromises = roomList.value.map(room => getRoomData({ id: room.id }))
+    const responses = await Promise.all(roomDetailsPromises)
 
-    // 2. 定义列配置
+    // 2. 准备导出数据 - 使用详细信息中的数据
+    const exportDataList = responses.map((response, index) => {
+      const item = response.data || {}
+      return {
+        '序号': index + 1,
+        '房间名称': item.name || '未知房间',
+        '房间用途': item.usage || '-',
+        '面积(m²)': item.area || '0',
+        '所属平台': (item.platform && item.platform.map(p => p.name).join(', ')) || '-',
+        '传感器数': (item.sensor && item.sensor.length) || 0,
+        '摄像头数': (item.camera && item.camera.length) || 0,
+        '报警数': (item.alarm && item.alarm.length) || 0
+      }
+    })
+
+    // 3. 定义列配置
     const columns = [
       { prop: '序号', label: '序号', width: 10 },
       { prop: '房间名称', label: '房间名称', width: 25 },
@@ -309,10 +317,10 @@ const handleExport = () => {
       { prop: '报警数', label: '报警数', width: 12 }
     ]
 
-    // 3. 生成文件名
+    // 4. 生成文件名
     const filename = `房间统计_${selectedFloorName.value || '全部'}`
 
-    // 4. 调用导出函数
+    // 5. 调用导出函数
     exportToExcel(exportDataList, columns, filename)
     ElMessage.success('导出成功')
   } catch (error) {

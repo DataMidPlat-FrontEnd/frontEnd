@@ -115,8 +115,13 @@ import { getTrainStatistics } from '@/api/usage'
 import { getDetailedList } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { exportToExcel } from '@/utils/export'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
 
 const loading = ref(false)
+
+// 获取用户信息
+const userStore = useUserStore()
 
 /* 查询条件 */
 const queryType = ref(0) // 0实时 1时段
@@ -174,6 +179,23 @@ const fetchData = async () => {
         return
       }
     }
+
+    // 检查用户权限
+    const hasFullPermission = hasFullDataPermission(userStore.userRole)
+
+    // 如果是受限用户，检查是否有仪器权限
+    if (!hasFullPermission) {
+      const allowedEquipmentIds = userStore.equipmentIds || []
+      if (allowedEquipmentIds.length === 0) {
+        ElMessage.warning('您没有分配任何仪器权限，无法查看数据')
+        allData.value = []
+        total.value = 0
+        tableData.value = []
+        loading.value = false
+        return
+      }
+    }
+
     const aggregated = []
     let pageNo = 1
     while (true) {
@@ -184,6 +206,12 @@ const fetchData = async () => {
         page: pageNo,
         pageSize: backendPageSize
       }
+
+      // 如果是受限用户，添加仪器权限过滤
+      if (!hasFullPermission) {
+        params.eq = userStore.equipmentIds || []
+      }
+
       if (!params.platform) {
         params.platform = []
       }
@@ -203,9 +231,25 @@ const fetchData = async () => {
           offline: Number(d.offline ?? 0),
           tTime: Number(d.tTime ?? 0),
           tAmount: Number(d.tAmount ?? 0),
-          tIncome: Number(d.tIncome ?? 0)
+          tIncome: Number(d.tIncome ?? 0),
+          equipmentId: d.id || d.equipmentId // 保存仪器ID用于权限过滤
         }))
-        aggregated.push(...mapped)
+
+        // 前端再次过滤数据（双重保险）
+        let filteredMapped = mapped
+        if (!hasFullPermission) {
+          const allowedEquipmentIds = userStore.equipmentIds || []
+          filteredMapped = mapped.filter(item => {
+            // 如果有equipmentId，使用ID匹配
+            if (item.equipmentId) {
+              return allowedEquipmentIds.includes(Number(item.equipmentId))
+            }
+            // 否则返回true（依赖后端过滤）
+            return true
+          })
+        }
+
+        aggregated.push(...filteredMapped)
         if (data.length < backendPageSize) break
         pageNo += 1
       } else {

@@ -118,8 +118,13 @@ import { getBuyStatistics } from '@/api/usage'
 import { getDetailedList } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { exportToExcel } from '@/utils/export'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
 
 const loading = ref(false)
+
+// 获取用户信息
+const userStore = useUserStore()
 
 /* 查询条件 */
 const queryType = ref(0) // 0实时 1时段
@@ -138,21 +143,58 @@ const allData = ref([])
 /* 平台下拉选项 - 从接口动态获取 */
 const platformOptions = ref([])
 
+/* 仪器映射表 - 用于权限过滤 */
+const equipmentMap = ref({
+  byId: new Map(),      // ID -> { name, code }
+  byName: new Map(),    // name -> ID
+  byCode: new Map()     // code -> ID
+})
+
 /**
- * 从 detailedList 接口获取平台列表
- * 该接口返回包含 groupList 数组的数据
+ * 从 detailedList 接口获取平台列表和仪器映射表
+ * 该接口返回包含 groupList 数组和 instrumentInfoList 数组的数据
  */
 const fetchPlatformOptions = async () => {
   try {
     const response = await getDetailedList()
-    if (response.code === '00000' && response.data && response.data.groupList) {
-      // 将接口返回的 groupList 数组转换为下拉框选项格式
-      // { name: "平台名称", id: "平台ID" } -> { id: 平台ID, name: "平台名称" }
-      platformOptions.value = response.data.groupList.map(g => ({
-        id: Number(g.id), // 转换为数字类型
-        name: g.name || g.groupName || `平台 ${g.id}`
-      }))
-      console.log('成功加载平台选项:', platformOptions.value.length, '个')
+    if (response.code === '00000' && response.data) {
+      // 1. 加载平台选项
+      if (response.data.groupList) {
+        platformOptions.value = response.data.groupList.map(g => ({
+          id: Number(g.id),
+          name: g.name || g.groupName || `平台 ${g.id}`
+        }))
+        console.log('成功加载平台选项:', platformOptions.value.length, '个')
+      }
+
+      // 2. 构建仪器映射表（用于权限过滤）
+      if (response.data.instrumentInfoList) {
+        const byId = new Map()
+        const byName = new Map()
+        const byCode = new Map()
+
+        response.data.instrumentInfoList.forEach(item => {
+          const id = Number(item.id)
+          const name = item.name || item.instrumentName
+          const code = item.code
+
+          // ID -> { name, code }
+          byId.set(id, { name, code })
+
+          // name -> ID
+          if (name) {
+            byName.set(name, id)
+          }
+
+          // code -> ID
+          if (code) {
+            byCode.set(code, id)
+          }
+        })
+
+        equipmentMap.value = { byId, byName, byCode }
+        console.log('成功构建仪器映射表:', byId.size, '个仪器')
+      }
     } else {
       console.warn('获取平台列表失败或数据格式错误')
     }
@@ -161,6 +203,7 @@ const fetchPlatformOptions = async () => {
     ElMessage.error('获取平台列表失败')
   }
 }
+
 
 /* 请求数据 */
 const fetchData = async () => {
@@ -176,6 +219,10 @@ const fetchData = async () => {
         return
       }
     }
+
+    // 检查用户权限
+    const hasFullPermission = hasFullDataPermission(userStore.userRole)
+
     const params = {
       platform: platformIds.value.length ? platformIds.value : [],
       keyword: keyword.value.trim(),
@@ -184,6 +231,21 @@ const fetchData = async () => {
       pageSize: pageSize.value
     }
     
+    // 如果是受限用户，添加仪器权限过滤
+    if (!hasFullPermission) {
+      const allowedEquipmentIds = userStore.equipmentIds || []
+      if (allowedEquipmentIds.length === 0) {
+        ElMessage.warning('您没有分配任何仪器权限，无法查看数据')
+        allData.value = []
+        total.value = 0
+        tableData.value = []
+        loading.value = false
+        return
+      }
+      // 将仪器ID列表传递给后端（如果后端支持）
+      params.eq = allowedEquipmentIds
+    }
+
     // 确保platform字段存在，即使是空数组
     if (!params.platform) {
       params.platform = []
@@ -194,28 +256,84 @@ const fetchData = async () => {
       params.endDate = endDate.value
     }
 
-    console.log('发送请求参数:', JSON.stringify(params, null, 2))
+    console.log('=== 购置投入产出分析 - 发送请求 ===')
+    console.log('请求参数:', JSON.stringify(params, null, 2))
     const res = await getBuyStatistics(params)
-    console.log('收到响应:', res)
+    console.log('=== 购置投入产出分析 - 收到响应 ===')
+    console.log('响应状态:', res.code)
+    console.log('数据条数:', res.data?.length || 0)
+    if (res.data && res.data.length > 0) {
+      console.log('第一条数据示例:', res.data[0])
+    }
+
     if (res.code === '00000' || res.code === 0) {
       const data = res.data || []
-      const mapped = data.map(d => ({
-        name: d.name,
-        code: d.code,
-        platform: d.platform || '未知平台',
-        worth: Number(d.worth ?? 0),
-        parts: Number(d.parts ?? 0),
-        tTime: Number(d.tTime ?? 0),
-        tAmount: Number(d.tAmount ?? 0),
-        tIncome: Number(d.tIncome ?? 0),
-        tCard: Number(d.tCard ?? 0),
-        iCard: Number(d.iCard ?? 0),
-        oCard: Number(d.oCard ?? 0),
-        inputOutputRatio: parseFloat(d.inputOutputRatio || '0')
-      }))
-      allData.value = mapped
-      total.value = mapped.length
-      tableData.value = mapped.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
+      console.log('=== 开始数据映射和权限过滤 ===')
+
+      // 数据映射：通过名称或编号查找仪器ID
+      const mapped = data.map((d) => {
+        // 尝试通过名称或编号查找仪器ID
+        let equipmentId = null
+        if (d.name && equipmentMap.value.byName.has(d.name)) {
+          equipmentId = equipmentMap.value.byName.get(d.name)
+        } else if (d.code && equipmentMap.value.byCode.has(d.code)) {
+          equipmentId = equipmentMap.value.byCode.get(d.code)
+        }
+
+        return {
+          name: d.name,
+          code: d.code,
+          platform: d.platform || '未知平台',
+          worth: Number(d.worth ?? 0),
+          parts: Number(d.parts ?? 0),
+          tTime: Number(d.tTime ?? 0),
+          tAmount: Number(d.tAmount ?? 0),
+          tIncome: Number(d.tIncome ?? 0),
+          tCard: Number(d.tCard ?? 0),
+          iCard: Number(d.iCard ?? 0),
+          oCard: Number(d.oCard ?? 0),
+          inputOutputRatio: parseFloat(d.inputOutputRatio || '0'),
+          equipmentId: equipmentId // 通过名称或编号匹配到的仪器ID
+        }
+      })
+
+      console.log('映射后数据条数:', mapped.length)
+
+      // 前端权限过滤
+      let filteredData = mapped
+      if (!hasFullPermission) {
+        console.log('=== 开始前端权限过滤 ===')
+        const allowedEquipmentIds = userStore.equipmentIds || []
+        console.log('允许的仪器ID列表:', allowedEquipmentIds)
+        console.log('过滤前数据条数:', mapped.length)
+
+        filteredData = mapped.filter((item, index) => {
+          if (item.equipmentId) {
+            const isAllowed = allowedEquipmentIds.includes(Number(item.equipmentId))
+            if (index < 5) {
+              console.log(`数据${index}: ${item.name} (ID: ${item.equipmentId}) - ${isAllowed ? '✅ 允许' : '❌ 拒绝'}`)
+            }
+            return isAllowed
+          } else {
+            // 无法匹配到仪器ID，可能是数据不一致，为安全起见拒绝访问
+            if (index < 5) {
+              console.warn(`数据${index}: ${item.name} - ⚠️ 无法匹配仪器ID，拒绝访问`)
+            }
+            return false
+          }
+        })
+
+        console.log('过滤后数据条数:', filteredData.length)
+        console.log('=== 前端权限过滤完成 ===')
+      }
+
+      allData.value = filteredData
+      total.value = filteredData.length
+      tableData.value = filteredData.slice(page.value * pageSize.value, (page.value + 1) * pageSize.value)
+
+      console.log('=== 最终结果 ===')
+      console.log('总数据条数:', total.value)
+      console.log('当前页数据条数:', tableData.value.length)
     } else {
       ElMessage.error(res.msg || '获取数据失败')
     }
