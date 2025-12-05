@@ -37,7 +37,7 @@
         </el-sub-menu>
         <el-sub-menu index="usage">
           <template #title>
-            <el-icon><TrendCharts /></el-icon>
+            <el-icon><DataLine /></el-icon>
             <span>使用统计</span>
           </template>
           <el-menu-item index="/usage/equipment">仪器使用</el-menu-item>
@@ -46,7 +46,7 @@
         </el-sub-menu>
         <el-sub-menu index="performance">
           <template #title>
-            <el-icon><TrendCharts /></el-icon>
+            <el-icon><Histogram /></el-icon>
             <span>业绩统计</span>
           </template>
           <el-menu-item index="/performance/admin">管理员业绩统计</el-menu-item>
@@ -54,7 +54,7 @@
         </el-sub-menu>
         <el-sub-menu index="roi">
           <template #title>
-            <el-icon><TrendCharts /></el-icon>
+            <el-icon><PieChart /></el-icon>
             <span>投入产出分析</span>
           </template>
           <el-menu-item index="/roi/buy">购置投入产出分析</el-menu-item>
@@ -87,11 +87,10 @@
         <template v-if="isTopHeaderRoute">
           <div class="hl">
             <div class="logo-icon">
-              <el-icon :size="32"><DataAnalysis /></el-icon>
+              <el-icon :size="32"><component :is="headerIconComp" /></el-icon>
             </div>
             <div class="title-wrapper">
               <h1 class="title">{{ headerTitle }}</h1>
-              <p class="subtitle">{{ headerSubtitle }}</p>
             </div>
           </div>
           <div class="hr">
@@ -133,7 +132,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { DataAnalysis, HomeFilled, Collection, Fold, Expand, SwitchButton, User, TrendCharts } from '@element-plus/icons-vue'
+import { DataAnalysis, HomeFilled, Collection, Fold, Expand, SwitchButton, User, TrendCharts, Warning, Histogram, DataLine, PieChart } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -144,42 +143,18 @@ const keyword = ref('')
 
 const activeMenu = computed(() => route.fullPath.startsWith('/entities') ? '/entities' : route.path)
 const pageTitle = computed(() => route.meta.title || '')
-const isTopHeaderRoute = computed(() => ['Dashboard', 'Building', 'Floor', 'Room', 'Equipment', 'PlatformOperation', 'EquipmentOperation', 'UserOperation', 'TrainingOperation', 'UsageEquipment', 'PerformanceAdmin', 'PerformancePlatform', 'RoiBuy', 'RoiRepair', 'RoiTrain'].includes(String(route.name)))
-const headerTitle = computed(() => {
-  if (route.name === 'Dashboard') return '运营首页'
-  if (route.name === 'Building') return '建筑统计'
-  if (route.name === 'Floor') return '楼层统计'
-  if (route.name === 'Room') return '房间统计'
-  if (route.name === 'Equipment') return '仪器统计'
-  if (route.name === 'PlatformOperation') return '平台运营'
-  if (route.name === 'EquipmentOperation') return '仪器运营'
-  if (route.name === 'UserOperation') return '用户运营'
-  if (route.name === 'TrainingOperation') return '培训运营'
-  if (route.name === 'UsageEquipment') return '使用统计'
-  if (route.name === 'PerformanceAdmin') return '业绩统计'
-  if (route.name === 'PerformancePlatform') return '业绩统计'
-  if (route.name === 'RoiBuy') return '投入产出分析'
-  if (route.name === 'RoiRepair') return '投入产出分析'
-  if (route.name === 'RoiTrain') return '投入产出分析'
-  return pageTitle.value
-})
-const headerSubtitle = computed(() => {
-  if (route.name === 'Dashboard') return 'OPERATION DASHBOARD'
-  if (route.name === 'Building') return 'BUILDING ANALYTICS'
-  if (route.name === 'Floor') return 'FLOOR ANALYTICS'
-  if (route.name === 'Room') return 'ROOM ANALYTICS'
-  if (route.name === 'Equipment') return 'EQUIPMENT ANALYTICS'
-  if (route.name === 'PlatformOperation') return 'PLATFORM OPERATION'
-  if (route.name === 'EquipmentOperation') return 'EQUIPMENT OPERATION'
-  if (route.name === 'UserOperation') return 'USER OPERATION'
-  if (route.name === 'TrainingOperation') return 'TRAINING OPERATION'
-  if (route.name === 'UsageEquipment') return 'USAGE STATISTICS'
-  if (route.name === 'PerformanceAdmin') return 'PERFORMANCE ANALYTICS'
-  if (route.name === 'PerformancePlatform') return 'PERFORMANCE ANALYTICS'
-  if (route.name === 'RoiBuy') return 'ROI ANALYTICS'
-  if (route.name === 'RoiRepair') return 'ROI ANALYTICS'
-  if (route.name === 'RoiTrain') return 'ROI ANALYTICS'
-  return ''
+const isTopHeaderRoute = computed(() => true)
+const headerTitle = computed(() => pageTitle.value)
+const headerIconComp = computed(() => {
+  const p = route.path
+  if (p.startsWith('/dashboard')) return HomeFilled
+  if (p.startsWith('/entities')) return Collection
+  if (p.startsWith('/operation')) return TrendCharts
+  if (p.startsWith('/usage')) return DataLine
+  if (p.startsWith('/performance')) return Histogram
+  if (p.startsWith('/roi')) return PieChart
+  if (p.startsWith('/alarm')) return Warning
+  return DataAnalysis
 })
 
 const goDashboard = () => router.push('/dashboard')

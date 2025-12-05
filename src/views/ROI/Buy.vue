@@ -11,24 +11,31 @@
       <!-- 查询条件 -->
       <div class="filter-section">
         <el-form :inline="true" class="filter-form">
-          <!-- 查询类型 -->
-          <el-form-item label="查询类型">
-            <el-select v-model="queryType" style="width: 120px">
-              <el-option :value="0" label="实时" />
-              <el-option :value="1" label="按时段" />
-            </el-select>
+          <!-- 查询方式 -->
+          <el-form-item label="查询方式">
+            <el-radio-group v-model="queryType" @change="handleQueryTypeChange">
+              <el-radio-button :label="0">实时</el-radio-button>
+              <el-radio-button :label="1">按时段</el-radio-button>
+            </el-radio-group>
           </el-form-item>
 
-          <!-- 日期范围（按时段才显示） -->
-          <el-form-item label="时间范围" v-if="queryType === 1">
+          <!-- 开始/结束日期（按时段才显示） -->
+          <el-form-item label="开始日期" v-if="queryType === 1">
             <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              v-model="startDate"
+              type="date"
+              placeholder="选择开始日期"
+              format="YYYY-MM-DD"
               value-format="YYYY-MM-DD"
-              style="width: 240px"
+            />
+          </el-form-item>
+          <el-form-item label="结束日期" v-if="queryType === 1">
+            <el-date-picker
+              v-model="endDate"
+              type="date"
+              placeholder="选择结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
             />
           </el-form-item>
 
@@ -116,7 +123,8 @@ const loading = ref(false)
 
 /* 查询条件 */
 const queryType = ref(0) // 0实时 1时段
-const dateRange = ref([])
+const startDate = ref('')
+const endDate = ref('')
 const platformIds = ref([]) // 多选平台 id
 const keyword = ref('')
 
@@ -158,6 +166,16 @@ const fetchPlatformOptions = async () => {
 const fetchData = async () => {
   loading.value = true
   try {
+    if (queryType.value === 1) {
+      if (!startDate.value || !endDate.value) {
+        ElMessage.warning('请选择开始日期和结束日期')
+        return
+      }
+      if (startDate.value > endDate.value) {
+        ElMessage.warning('开始日期不能大于结束日期')
+        return
+      }
+    }
     const params = {
       platform: platformIds.value.length ? platformIds.value : [],
       keyword: keyword.value.trim(),
@@ -171,9 +189,9 @@ const fetchData = async () => {
       params.platform = []
     }
     // 时段查询才传日期
-    if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      params.beginDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
+    if (queryType.value === 1) {
+      params.beginDate = startDate.value
+      params.endDate = endDate.value
     }
 
     console.log('发送请求参数:', JSON.stringify(params, null, 2))
@@ -217,7 +235,8 @@ const handlePageChange = (p) => {
 
 const resetFilter = () => {
   queryType.value = 0
-  dateRange.value = []
+  startDate.value = ''
+  endDate.value = ''
   platformIds.value = []
   keyword.value = ''
   page.value = 0
@@ -277,8 +296,8 @@ const exportData = () => {
     let filename = '购置投入产出分析'
     if (queryType.value === 0) {
       filename += '_实时'
-    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    } else if (queryType.value === 1 && startDate.value && endDate.value) {
+      filename += `_${startDate.value}至${endDate.value}`
     }
 
     // 4. 调用导出函数
@@ -298,6 +317,13 @@ watch(queryType, (newVal) => {
     fetchData()
   }
 })
+
+const handleQueryTypeChange = () => {
+  if (queryType.value === 0) {
+    page.value = 0
+    fetchData()
+  }
+}
 
 onMounted(() => {
   console.log('Buy.vue 组件挂载，准备加载数据...')
