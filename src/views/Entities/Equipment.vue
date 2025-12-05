@@ -233,7 +233,7 @@
             </el-form-item>
             
             <el-form-item>
-              <el-button type="primary" size="small" @click="queryUsageData">查询使用数据</el-button>
+              <el-button type="primary" @click="queryUsageData">查询使用数据</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -303,6 +303,7 @@
             border 
             style="width: 100%"
             :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
+            :row-class-name="usageSummaryRowClassName"
           >
             <el-table-column prop="item" label="统计项目" min-width="150" />
             <el-table-column prop="value" label="数值" min-width="120" align="right">
@@ -552,6 +553,10 @@ const usageStatsData = computed(() => {
     }
   ]
 })
+
+const usageSummaryRowClassName = ({ row }) => {
+  return row.item === '总记录数' ? 'summary-total-row' : ''
+}
 
 // 查询类型变化处理
 const handleQueryTypeChange = () => {
@@ -879,11 +884,16 @@ onMounted(() => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+.query-card :deep(.el-card__body) {
+  padding: 16px;
+}
+
 .query-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   align-items: center;
+  padding: 8px 0;
 }
 
 /* 保证查询控件与按钮在同一水平线 */
@@ -1065,7 +1075,11 @@ onMounted(() => {
 .usage-query-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
+}
+
+.usage-query-card :deep(.el-card__body) {
+  padding: 16px;
 }
 
 .usage-table-card {
@@ -1074,6 +1088,10 @@ onMounted(() => {
 
 .usage-chart-card {
   margin-bottom: 0;
+}
+
+.usage-chart-card h4 {
+  margin: 0 0 15px 0;
 }
 
 .chart-stat {
@@ -1094,6 +1112,10 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 600;
   color: #303133;
+}
+
+.summary-total-row td {
+  background-color: #ffffff !important;
 }
 
 /* 列设置样式 */

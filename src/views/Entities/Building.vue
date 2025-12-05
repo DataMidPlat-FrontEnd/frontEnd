@@ -3,7 +3,7 @@
     <el-card class="query-card">
       <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="查询方式">
-          <el-radio-group v-model="queryForm.queryType" size="small" @change="handleQueryTypeChange">
+          <el-radio-group v-model="queryForm.queryType" @change="handleQueryTypeChange">
             <el-radio-button :label="0">实时</el-radio-button>
             <el-radio-button :label="1">按时段</el-radio-button>
           </el-radio-group>
@@ -28,7 +28,6 @@
             placeholder="选择开始日期"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
-            size="small"
           />
         </el-form-item>
         <el-form-item label="结束日期" v-if="queryForm.queryType === 1">
@@ -38,13 +37,12 @@
             placeholder="选择结束日期"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
-            size="small"
           />
         </el-form-item>
         
         <el-form-item>
-          <el-button type="primary" size="small" @click="handleQuery">查询</el-button>
-          <el-button size="small" @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleQuery">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -403,11 +401,16 @@ onMounted(() => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+.query-card :deep(.el-card__body) {
+  padding: 16px;
+}
+
 .query-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   align-items: center;
+  padding: 8px 0;
 }
 
 .query-form :deep(.el-form-item) {

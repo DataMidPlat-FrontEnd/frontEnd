@@ -11,21 +11,28 @@
       <!-- 查询条件 -->
       <div class="filter-section">
         <el-form :inline="true" class="filter-form">
-          <el-form-item label="查询类型">
-            <el-select v-model="queryType" style="width: 120px">
-              <el-option :value="0" label="实时" />
-              <el-option :value="1" label="按时段" />
-            </el-select>
+          <el-form-item label="查询方式">
+            <el-radio-group v-model="queryType" @change="handleQueryTypeChange">
+              <el-radio-button :label="0">实时</el-radio-button>
+              <el-radio-button :label="1">按时段</el-radio-button>
+            </el-radio-group>
           </el-form-item>
-          <el-form-item label="时间范围" v-if="queryType === 1">
+          <el-form-item label="开始日期" v-if="queryType === 1">
             <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              v-model="startDate"
+              type="date"
+              placeholder="选择开始日期"
+              format="YYYY-MM-DD"
               value-format="YYYY-MM-DD"
-              style="width: 240px"
+            />
+          </el-form-item>
+          <el-form-item label="结束日期" v-if="queryType === 1">
+            <el-date-picker
+              v-model="endDate"
+              type="date"
+              placeholder="选择结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
             />
           </el-form-item>
           <el-form-item>
@@ -45,12 +52,11 @@
                 <Reading />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">培训场数</div>
-              <div class="stat-value">{{ trainingCount }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">培训场数</div>
+            <div class="stat-value">{{ trainingCount }}</div>
           </div>
->
+          </div>
         </el-card>
         
         <el-card class="stat-card" v-if="trainingPeopleCount !== null">
@@ -60,12 +66,11 @@
                 <User />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">培训人数</div>
-              <div class="stat-value">{{ trainingPeopleCount }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">培训人数</div>
+            <div class="stat-value">{{ trainingPeopleCount }}</div>
           </div>
->
+          </div>
         </el-card>
         
         <el-card class="stat-card" v-if="trainingPassRate !== null">
@@ -75,12 +80,11 @@
                 <Trophy />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">培训通过率</div>
-              <div class="stat-value">{{ trainingPassRate }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">培训通过率</div>
+            <div class="stat-value">{{ trainingPassRate }}</div>
           </div>
->
+          </div>
         </el-card>
         
         <el-card class="stat-card" v-if="trainingMaterialsCount !== null">
@@ -90,12 +94,11 @@
                 <Document />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">培训资料数</div>
-              <div class="stat-value">{{ trainingMaterialsCount }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">培训资料数</div>
+            <div class="stat-value">{{ trainingMaterialsCount }}</div>
           </div>
->
+          </div>
         </el-card>
         
         <el-card class="stat-card" v-if="onlineTrainingCount !== null">
@@ -105,12 +108,11 @@
                 <Reading />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">线上培训量</div>
-              <div class="stat-value">{{ onlineTrainingCount }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">线上培训量</div>
+            <div class="stat-value">{{ onlineTrainingCount }}</div>
           </div>
->
+          </div>
         </el-card>
         
         <el-card class="stat-card" v-if="offlineTrainingCount !== null">
@@ -120,12 +122,11 @@
                 <Reading />
               </el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-title">线下培训量</div>
-              <div class="stat-value">{{ offlineTrainingCount }}</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-title">线下培训量</div>
+            <div class="stat-value">{{ offlineTrainingCount }}</div>
           </div>
->
+          </div>
         </el-card>
       </div>
 
@@ -167,8 +168,8 @@
               @current-change="(p) => platformRankingPage = p"
             />
           </div>
->
-        </el-card>
+          
+          </el-card>
         
         <el-card class="ranking-card" v-if="equipmentTrainingRanking.length > 0">
           <template #header>
@@ -225,8 +226,9 @@ import { ElMessage } from 'element-plus'
 import { exportMultiSheet } from '@/utils/export'
 
 const loading = ref(false)
-const queryType = ref(0) // 0:实时, 1:按时段
-const dateRange = ref([])
+const queryType = ref(0)
+const startDate = ref('')
+const endDate = ref('')
 
 // 培训统计数据 - 严格按照接口提到的数据
 const trainingCount = ref(null)
@@ -272,14 +274,20 @@ const hasRankingData = computed(() => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const params = {
-      type: queryType.value
+    if (queryType.value === 1) {
+      if (!startDate.value || !endDate.value) {
+        ElMessage.warning('请选择开始日期和结束日期')
+        return
+      }
+      if (startDate.value > endDate.value) {
+        ElMessage.warning('开始日期不能大于结束日期')
+        return
+      }
     }
-    
-    // 如果是按时段查询，添加日期参数
-    if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      params.beginDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
+    const params = { type: queryType.value }
+    if (queryType.value === 1) {
+      params.beginDate = startDate.value
+      params.endDate = endDate.value
     }
     
     const res = await getTotalTraining(params)
@@ -385,8 +393,8 @@ const exportData = () => {
     let filename = '培训运营统计'
     if (queryType.value === 0) {
       filename += '_实时'
-    } else if (queryType.value === 1 && dateRange.value?.length === 2) {
-      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    } else if (queryType.value === 1 && startDate.value && endDate.value) {
+      filename += `_${startDate.value}至${endDate.value}`
     }
 
     // 5. 构建Sheet数组
@@ -417,19 +425,14 @@ const exportData = () => {
 
 // 初始化
 onMounted(() => {
-  // 设置默认日期范围（最近30天）
-  const endDate = new Date()
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - 30)
-  
-  dateRange.value = [
-    startDate.toISOString().split('T')[0],
-    endDate.toISOString().split('T')[0]
-  ]
-  
-  // 加载数据
   fetchData()
 })
+
+const handleQueryTypeChange = () => {
+  if (queryType.value === 0) {
+    fetchData()
+  }
+}
 </script>
 
 <style lang="scss" scoped>

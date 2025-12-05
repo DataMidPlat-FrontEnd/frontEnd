@@ -11,27 +11,32 @@
       <!-- 查询条件 -->
       <div class="filter-section">
         <el-form :inline="true" class="filter-form">
-          <el-form-item label="查询类型">
-            <el-select v-model="queryType" style="width: 120px">
-              <el-option :value="0" label="实时" />
-              <el-option :value="1" label="按时段" />
-            </el-select>
+          <el-form-item label="查询方式">
+            <el-radio-group v-model="queryType" @change="handleQueryTypeChange">
+              <el-radio-button :label="0">实时</el-radio-button>
+              <el-radio-button :label="1">按时段</el-radio-button>
+            </el-radio-group>
           </el-form-item>
-          <el-form-item label="时间范围" v-if="queryType === 1">
+          <el-form-item label="开始日期" v-if="queryType === 1">
             <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              v-model="startDate"
+              type="date"
+              placeholder="选择开始日期"
+              format="YYYY-MM-DD"
               value-format="YYYY-MM-DD"
-              style="width: 240px"
+            />
+          </el-form-item>
+          <el-form-item label="结束日期" v-if="queryType === 1">
+            <el-date-picker
+              v-model="endDate"
+              type="date"
+              placeholder="选择结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :loading="loading" @click="fetchData">
-              查询
-            </el-button>
+            <el-button type="primary" :loading="loading" @click="fetchData">查询</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -50,7 +55,6 @@
               <div class="stat-value">{{ formatNumber(equipmentTotal) }} <span class="stat-unit">台</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="machineHours !== null">
@@ -65,7 +69,6 @@
               <div class="stat-value">{{ formatNumber(machineHours) }} <span class="stat-unit">小时</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="internalMachineHours !== null">
@@ -80,7 +83,6 @@
               <div class="stat-value">{{ formatNumber(internalMachineHours) }} <span class="stat-unit">小时</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="externalMachineHours !== null">
@@ -95,7 +97,6 @@
               <div class="stat-value">{{ formatNumber(externalMachineHours) }} <span class="stat-unit">小时</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="usageCount !== null">
@@ -110,7 +111,6 @@
               <div class="stat-value">{{ formatNumber(usageCount) }} <span class="stat-unit">次</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="internalUsageCount !== null">
@@ -125,7 +125,6 @@
               <div class="stat-value">{{ formatNumber(internalUsageCount) }} <span class="stat-unit">次</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="externalUsageCount !== null">
@@ -140,7 +139,6 @@
               <div class="stat-value">{{ formatNumber(externalUsageCount) }} <span class="stat-unit">次</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="income !== null">
@@ -155,7 +153,6 @@
               <div class="stat-value">{{ formatCurrency(income) }} <span class="stat-unit">元</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="internalIncome !== null">
@@ -170,7 +167,6 @@
               <div class="stat-value">{{ formatCurrency(internalIncome) }} <span class="stat-unit">元</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="externalIncome !== null">
@@ -185,7 +181,6 @@
               <div class="stat-value">{{ formatCurrency(externalIncome) }} <span class="stat-unit">元</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="usageRate !== null">
@@ -200,7 +195,6 @@
               <div class="stat-value">{{ formatPercent(usageRate) }} <span class="stat-unit">%</span></div>
             </div>
           </div>
->
         </el-card>
         
         <el-card class="stat-card" v-if="sampleCount !== null">
@@ -215,8 +209,7 @@
               <div class="stat-value">{{ formatNumber(sampleCount) }} <span class="stat-unit">个</span></div>
             </div>
           </div>
->
-        </el-card>
+          </el-card>
         
         <el-card class="stat-card" v-if="materialCount !== null">
           <div class="stat-content">
@@ -230,8 +223,7 @@
               <div class="stat-value">{{ formatNumber(materialCount) }} <span class="stat-unit">个</span></div>
             </div>
           </div>
->
-        </el-card>
+          </el-card>
       </div>
 
       <!-- 图表区域 - 使用排名、时间分布、使用趋势 -->
@@ -289,10 +281,12 @@
               <span>时间分布</span>
             </div>
           </template>
-          <div ref="timeChart" class="chart-container"></div>
+          <div ref="timeChart" class="chart-container time-chart"></div>
         </el-card>
-        
-        <el-card class="chart-card" v-if="usageTrendData.length > 0">
+      </div>
+      
+      <div class="chart-section-bottom" v-if="usageTrendData.length > 0">
+        <el-card class="chart-card">
           <template #header>
             <div class="chart-header">
               <el-icon :size="16" color="#E6A23C">
@@ -301,7 +295,7 @@
               <span>使用趋势</span>
             </div>
           </template>
-          <div ref="trendChart" class="chart-container"></div>
+          <div ref="trendChart" class="chart-container trend-chart"></div>
         </el-card>
       </div>
 
@@ -323,7 +317,8 @@ import { exportToExcel, exportMultiSheet } from '@/utils/export'
 
 const loading = ref(false)
 const queryType = ref(0) // 0:实时, 1:按时段
-const dateRange = ref([])
+const startDate = ref('')
+const endDate = ref('')
 
 // 仪器统计数据 - 严格按照接口提到的数据
 const equipmentTotal = ref(null)
@@ -386,9 +381,17 @@ const fetchData = async () => {
     }
     
     // 如果是按时段查询，添加日期参数
-    if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      params.beginDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
+    if (queryType.value === 1) {
+      if (!startDate.value || !endDate.value) {
+        ElMessage.warning('请选择开始日期和结束日期')
+        return
+      }
+      if (startDate.value > endDate.value) {
+        ElMessage.warning('开始日期不能大于结束日期')
+        return
+      }
+      params.beginDate = startDate.value
+      params.endDate = endDate.value
     }
     
     const res = await getTotalEquipment(params)
@@ -461,34 +464,22 @@ const getProgressColor = (index) => {
   return colors[index] || colors[colors.length - 1]
 }
 
-// 格式化数字
+// 数值原样展示
 const formatNumber = (num) => {
   if (num === null || num === undefined) return '0'
-  const n = Number(num)
-  if (n >= 10000) {
-    return (n / 10000).toFixed(1) + '万'
-  } else if (n >= 1000) {
-    return (n / 1000).toFixed(1) + '千'
-  }
-  return n.toString()
+  return String(num)
 }
 
-// 格式化货币
+// 货币原样展示
 const formatCurrency = (num) => {
   if (num === null || num === undefined) return '0'
-  const n = Number(num)
-  if (n >= 10000) {
-    return (n / 10000).toFixed(1) + '万'
-  } else if (n >= 1000) {
-    return (n / 1000).toFixed(1) + '千'
-  }
-  return n.toString()
+  return String(num)
 }
 
-// 格式化百分比
+// 百分比原样展示
 const formatPercent = (num) => {
   if (num === null || num === undefined) return '0'
-  return Number(num).toFixed(1)
+  return String(num)
 }
 
 const assignArrayPayload = (arr) => {
@@ -554,6 +545,20 @@ const initTrendChart = () => {
     tooltip: {
       trigger: 'axis'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        show: true,
+        realtime: true,
+        start: 0,
+        end: 100,
+        height: 24
+      },
+      {
+        type: 'inside',
+        realtime: true
+      }
+    ],
     xAxis: {
       type: 'category',
       data: usageTrendData.value.map(item => item.date || ''),
@@ -652,9 +657,8 @@ const exportData = () => {
     if (queryType.value === 0) {
       // 实时查询
       filename += '_实时'
-    } else if (queryType.value === 1 && dateRange.value && dateRange.value.length === 2) {
-      // 时段查询
-      filename += `_${dateRange.value[0]}至${dateRange.value[1]}`
+    } else if (queryType.value === 1 && startDate.value && endDate.value) {
+      filename += `_${startDate.value}至${endDate.value}`
     }
 
     // 6. 准备导出的sheets
@@ -696,17 +700,6 @@ const exportData = () => {
 
 // 初始化
 onMounted(() => {
-  // 设置默认日期范围（最近30天）
-  const endDate = new Date()
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - 30)
-  
-  dateRange.value = [
-    startDate.toISOString().split('T')[0],
-    endDate.toISOString().split('T')[0]
-  ]
-  
-  // 加载数据
   fetchData()
 })
 </script>
@@ -804,7 +797,7 @@ onMounted(() => {
 
 .chart-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, minmax(400px, 1fr));
   gap: 20px;
   margin-top: 24px;
 }
@@ -826,6 +819,22 @@ onMounted(() => {
     height: 320px;
     padding: 16px;
   }
+  
+  .time-chart {
+    height: 460px;
+  }
+  
+  .wide-chart {
+    grid-column: 1 / -1;
+  }
+}
+
+.chart-section-bottom {
+  margin-top: 20px;
+}
+
+.chart-section-bottom .chart-card .trend-chart {
+  height: 520px;
 }
 
 .ranking-list {
@@ -925,3 +934,8 @@ onMounted(() => {
   min-height: calc(100vh - 40px);
 }
 </style>
+const handleQueryTypeChange = () => {
+  if (queryType.value === 0) {
+    fetchData()
+  }
+}
