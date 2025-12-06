@@ -141,21 +141,58 @@ const allData = ref([])
 /* 平台下拉选项 - 从接口动态获取 */
 const platformOptions = ref([])
 
+/* 仪器映射表 - 用于权限过滤 */
+const equipmentMap = ref({
+  byId: new Map(),      // ID -> { name, code }
+  byName: new Map(),    // name -> ID
+  byCode: new Map()     // code -> ID
+})
+
 /**
- * 从 detailedList 接口获取平台列表
- * 该接口返回包含 groupList 数组的数据
+ * 从 detailedList 接口获取平台列表和仪器映射表
+ * 该接口返回包含 groupList 数组和 instrumentInfoList 数组的数据
  */
 const fetchPlatformOptions = async () => {
   try {
     const response = await getDetailedList()
-    if (response.code === '00000' && response.data && response.data.groupList) {
-      // 将接口返回的 groupList 数组转换为下拉框选项格式
-      // { name: "平台名称", id: "平台ID" } -> { id: 平台ID, name: "平台名称" }
-      platformOptions.value = response.data.groupList.map(g => ({
-        id: Number(g.id), // 转换为数字类型
-        name: g.name || g.groupName || `平台 ${g.id}`
-      }))
-      console.log('成功加载平台选项:', platformOptions.value.length, '个')
+    if (response.code === '00000' && response.data) {
+      // 1. 加载平台选项
+      if (response.data.groupList) {
+        platformOptions.value = response.data.groupList.map(g => ({
+          id: Number(g.id),
+          name: g.name || g.groupName || `平台 ${g.id}`
+        }))
+        console.log('成功加载平台选项:', platformOptions.value.length, '个')
+      }
+
+      // 2. 构建仪器映射表（用于权限过滤）
+      if (response.data.instrumentInfoList) {
+        const byId = new Map()
+        const byName = new Map()
+        const byCode = new Map()
+
+        response.data.instrumentInfoList.forEach(item => {
+          const id = Number(item.id)
+          const name = item.name || item.instrumentName
+          const code = item.code
+
+          // ID -> { name, code }
+          byId.set(id, { name, code })
+
+          // name -> ID
+          if (name) {
+            byName.set(name, id)
+          }
+
+          // code -> ID
+          if (code) {
+            byCode.set(code, id)
+          }
+        })
+
+        equipmentMap.value = { byId, byName, byCode }
+        console.log('成功构建仪器映射表:', byId.size, '个仪器')
+      }
     } else {
       console.warn('获取平台列表失败或数据格式错误')
     }
@@ -222,30 +259,49 @@ const fetchData = async () => {
       const res = await getTrainStatistics(params)
       if (res.code === '00000' || res.code === 0) {
         const data = res.data || []
-        const mapped = data.map(d => ({
-          name: d.name,
-          code: d.code,
-          location: d.location || '未知位置',
-          platform: d.platform || '未知平台',
-          online: Number(d.online ?? 0),
-          offline: Number(d.offline ?? 0),
-          tTime: Number(d.tTime ?? 0),
-          tAmount: Number(d.tAmount ?? 0),
-          tIncome: Number(d.tIncome ?? 0),
-          equipmentId: d.id || d.equipmentId // 保存仪器ID用于权限过滤
-        }))
 
-        // 前端再次过滤数据（双重保险）
+        // 数据映射：通过名称或编号查找仪器ID
+        const mapped = data.map((d) => {
+          // 尝试通过名称或编号查找仪器ID
+          let equipmentId = null
+          if (d.name && equipmentMap.value.byName.has(d.name)) {
+            equipmentId = equipmentMap.value.byName.get(d.name)
+          } else if (d.code && equipmentMap.value.byCode.has(d.code)) {
+            equipmentId = equipmentMap.value.byCode.get(d.code)
+          }
+
+          return {
+            name: d.name,
+            code: d.code,
+            location: d.location || '未知位置',
+            platform: d.platform || '未知平台',
+            online: Number(d.online ?? 0),
+            offline: Number(d.offline ?? 0),
+            tTime: Number(d.tTime ?? 0),
+            tAmount: Number(d.tAmount ?? 0),
+            tIncome: Number(d.tIncome ?? 0),
+            equipmentId: equipmentId // 通过名称或编号匹配到的仪器ID
+          }
+        })
+
+        // 前端权限过滤
         let filteredMapped = mapped
         if (!hasFullPermission) {
           const allowedEquipmentIds = userStore.equipmentIds || []
-          filteredMapped = mapped.filter(item => {
-            // 如果有equipmentId，使用ID匹配
+          filteredMapped = mapped.filter((item, index) => {
             if (item.equipmentId) {
-              return allowedEquipmentIds.includes(Number(item.equipmentId))
+              const isAllowed = allowedEquipmentIds.includes(Number(item.equipmentId))
+              if (index < 5) {
+                console.log(`数据${index}: ${item.name} (ID: ${item.equipmentId}) - ${isAllowed ? '✅ 允许' : '❌ 拒绝'}`)
+              }
+              return isAllowed
+            } else {
+              // 无法匹配到仪器ID，可能是数据不一致，为安全起见拒绝访问
+              if (index < 5) {
+                console.warn(`数据${index}: ${item.name} - ⚠️ 无法匹配仪器ID，拒绝访问`)
+              }
+              return false
             }
-            // 否则返回true（依赖后端过滤）
-            return true
           })
         }
 

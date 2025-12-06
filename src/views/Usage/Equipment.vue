@@ -131,8 +131,18 @@ import { getEquipmentUsage } from '@/api/usage'
 import { getDetailedList } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { exportToExcel } from '@/utils/export'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
 
 const loading = ref(false)
+
+/* 用户信息和权限控制 */
+const userStore = useUserStore()
+const equipmentMap = ref({
+  byId: new Map(),
+  byName: new Map(),
+  byCode: new Map()
+})
 
 /* 查询条件 */
 const queryType = ref(0) // 0实时 1时段
@@ -151,6 +161,33 @@ const allData = ref([])
 
 /* 平台下拉选项 - 从接口动态获取 */
 const platformOptions = ref([])
+
+/* 加载仪器映射表 */
+const fetchEquipmentMap = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.instrumentInfoList) {
+      const byId = new Map()
+      const byName = new Map()
+      const byCode = new Map()
+
+      response.data.instrumentInfoList.forEach(item => {
+        const id = Number(item.id)
+        const name = item.name || item.instrumentName
+        const code = item.code
+
+        byId.set(id, { name, code })
+        if (name) byName.set(name, id)
+        if (code) byCode.set(code, id)
+      })
+
+      equipmentMap.value = { byId, byName, byCode }
+      console.log('✅ 仪器映射表加载成功:', byId.size, '个仪器')
+    }
+  } catch (error) {
+    console.error('❌ 加载仪器映射表失败:', error)
+  }
+}
 
 /* 请求数据 */
 const fetchData = async () => {
@@ -184,34 +221,70 @@ const fetchData = async () => {
       const res = await getEquipmentUsage(params)
       if (res.code === '00000' || res.code === 0) {
         const data = res.data || []
-        const mapped = data.map(d => ({
-          name: d.name,
-          code: d.code,
-          location: d.location,
-          platform: d.platform,
-          usage: Number(d.usage ?? 0),
-          tTime: Number(d.tTime ?? 0),
-          iTime: Number(d.iTime ?? 0),
-          oTime: Number(d.oTime ?? 0),
-          sample: Number(d.sample ?? 0),
-          materials: Number(d.materials ?? 0),
-          tAmount: Number(d.tAmount ?? 0),
-          iAmount: Number(d.iAmount ?? 0),
-          oAmount: Number(d.oAmount ?? 0),
-          tUser: Number(d.tUser ?? 0),
-          iUser: Number(d.iUser ?? 0),
-          oUser: Number(d.oUser ?? 0),
-          tGroup: Number(d.tGroup ?? 0),
-          iGroup: Number(d.iGroup ?? 0),
-          oGroup: Number(d.oGroup ?? 0),
-          tCard: Number(d.tCard ?? 0),
-          iCard: Number(d.iCard ?? 0),
-          oCard: Number(d.oCard ?? 0),
-          tIncome: Number(d.tIncome ?? 0),
-          iIncome: Number(d.iIncome ?? 0),
-          oIncome: Number(d.oIncome ?? 0)
-        }))
-        aggregated.push(...mapped)
+
+        // 数据映射：通过名称或编号查找仪器ID
+        const mapped = data.map((d) => {
+          // 尝试通过名称或编号查找仪器ID
+          let equipmentId = null
+          if (d.name && equipmentMap.value.byName.has(d.name)) {
+            equipmentId = equipmentMap.value.byName.get(d.name)
+          } else if (d.code && equipmentMap.value.byCode.has(d.code)) {
+            equipmentId = equipmentMap.value.byCode.get(d.code)
+          }
+
+          return {
+            name: d.name,
+            code: d.code,
+            location: d.location,
+            platform: d.platform,
+            usage: Number(d.usage ?? 0),
+            tTime: Number(d.tTime ?? 0),
+            iTime: Number(d.iTime ?? 0),
+            oTime: Number(d.oTime ?? 0),
+            sample: Number(d.sample ?? 0),
+            materials: Number(d.materials ?? 0),
+            tAmount: Number(d.tAmount ?? 0),
+            iAmount: Number(d.iAmount ?? 0),
+            oAmount: Number(d.oAmount ?? 0),
+            tUser: Number(d.tUser ?? 0),
+            iUser: Number(d.iUser ?? 0),
+            oUser: Number(d.oUser ?? 0),
+            tGroup: Number(d.tGroup ?? 0),
+            iGroup: Number(d.iGroup ?? 0),
+            oGroup: Number(d.oGroup ?? 0),
+            tCard: Number(d.tCard ?? 0),
+            iCard: Number(d.iCard ?? 0),
+            oCard: Number(d.oCard ?? 0),
+            tIncome: Number(d.tIncome ?? 0),
+            iIncome: Number(d.iIncome ?? 0),
+            oIncome: Number(d.oIncome ?? 0),
+            equipmentId: equipmentId // 通过名称或编号匹配到的仪器ID
+          }
+        })
+
+        // 前端权限过滤
+        let filteredMapped = mapped
+        const hasFullPermission = hasFullDataPermission(userStore.userRole)
+        if (!hasFullPermission) {
+          const allowedEquipmentIds = userStore.equipmentIds || []
+          filteredMapped = mapped.filter((item, index) => {
+            if (item.equipmentId) {
+              const isAllowed = allowedEquipmentIds.includes(Number(item.equipmentId))
+              if (index < 5) {
+                console.log(`数据${index}: ${item.name} (ID: ${item.equipmentId}) - ${isAllowed ? '✅ 允许' : '❌ 拒绝'}`)
+              }
+              return isAllowed
+            } else {
+              // 无法匹配到仪器ID，可能是数据不一致，为安全起见拒绝访问
+              if (index < 5) {
+                console.warn(`数据${index}: ${item.name} - ⚠️ 无法匹配仪器ID，拒绝访问`)
+              }
+              return false
+            }
+          })
+        }
+
+        aggregated.push(...filteredMapped)
         if (data.length < backendPageSize) break
         pageNo += 1
       } else {
@@ -339,11 +412,13 @@ const fetchPlatformOptions = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   console.log('Equipment.vue 组件挂载，准备加载数据...')
   // 先加载平台选项
-  fetchPlatformOptions()
-  // 然后加载数据
+  await fetchPlatformOptions()
+  // 再加载仪器映射表
+  await fetchEquipmentMap()
+  // 最后加载数据
   fetchData()
 })
 </script>

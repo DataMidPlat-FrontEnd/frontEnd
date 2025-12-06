@@ -312,13 +312,24 @@ import { ref, onMounted, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Monitor, Clock, TrendCharts, Money, PieChart } from '@element-plus/icons-vue'
 import { getTotalEquipment } from '@/api/equipmentOperation'
+import { getDetailedList } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { exportToExcel, exportMultiSheet } from '@/utils/export'
+import { useUserStore } from '@/stores/user'
+import { hasFullDataPermission } from '@/utils/auth'
 
 const loading = ref(false)
 const queryType = ref(0) // 0:实时, 1:按时段
 const startDate = ref('')
 const endDate = ref('')
+
+// 用户信息和权限控制
+const userStore = useUserStore()
+const equipmentMap = ref({
+  byId: new Map(),
+  byName: new Map(),
+  byCode: new Map()
+})
 
 // 仪器统计数据 - 严格按照接口提到的数据
 const equipmentTotal = ref(null)
@@ -372,6 +383,33 @@ const hasChartData = computed(() => {
          usageTrendData.value.length > 0
 })
 
+// 加载仪器映射表
+const fetchEquipmentMap = async () => {
+  try {
+    const response = await getDetailedList()
+    if (response.code === '00000' && response.data && response.data.instrumentInfoList) {
+      const byId = new Map()
+      const byName = new Map()
+      const byCode = new Map()
+
+      response.data.instrumentInfoList.forEach(item => {
+        const id = Number(item.id)
+        const name = item.name || item.instrumentName
+        const code = item.code
+
+        byId.set(id, { name, code })
+        if (name) byName.set(name, id)
+        if (code) byCode.set(code, id)
+      })
+
+      equipmentMap.value = { byId, byName, byCode }
+      console.log('✅ 仪器映射表加载成功:', byId.size, '个仪器')
+    }
+  } catch (error) {
+    console.error('❌ 加载仪器映射表失败:', error)
+  }
+}
+
 // 获取数据
 const fetchData = async () => {
   loading.value = true
@@ -418,8 +456,34 @@ const fetchData = async () => {
         externalIncome.value = d.oIncome ?? null
         usageRate.value = d.usage ?? null
         
-        // 图表与排名
-        equipmentRanking.value = d.eqRanking ?? []
+        // 图表与排名 - 添加权限过滤
+        const hasFullPermission = hasFullDataPermission(userStore.userRole)
+        let filteredRanking = d.eqRanking ?? []
+
+        if (!hasFullPermission) {
+          const allowedEquipmentIds = userStore.equipmentIds || []
+          filteredRanking = filteredRanking.filter((item, index) => {
+            // 通过名称或编号查找仪器ID
+            let equipmentId = null
+            if (item.name && equipmentMap.value.byName.has(item.name)) {
+              equipmentId = equipmentMap.value.byName.get(item.name)
+            } else if (item.code && equipmentMap.value.byCode.has(item.code)) {
+              equipmentId = equipmentMap.value.byCode.get(item.code)
+            }
+
+            // 检查权限
+            if (equipmentId) {
+              const isAllowed = allowedEquipmentIds.includes(Number(equipmentId))
+              if (index < 5) {
+                console.log(`排名数据${index}: ${item.name} (ID: ${equipmentId}) - ${isAllowed ? '✅ 允许' : '❌ 拒绝'}`)
+              }
+              return isAllowed
+            }
+            return false
+          })
+        }
+
+        equipmentRanking.value = filteredRanking
         timeDistributionData.value = d.distribution ?? []
         usageTrendData.value = d.trend ?? []
       }
@@ -699,7 +763,9 @@ const exportData = () => {
 }
 
 // 初始化
-onMounted(() => {
+onMounted(async () => {
+  // 先加载仪器映射表，再加载数据
+  await fetchEquipmentMap()
   fetchData()
 })
 </script>
